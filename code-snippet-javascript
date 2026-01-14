@@ -1,0 +1,678 @@
+(function () {
+  function initRatioRateGame() {
+    const container = document.getElementById("ratio-rate-game-container");
+    if (!container) return;
+
+    // ----------------------------
+    // Config
+    // ----------------------------
+    const GAME_ID = "rr"; // prefix for element IDs
+    const TOTAL_QUESTIONS_PER_SESSION = 10;
+
+    // Timer (seconds) by mode
+    const MODE_CONFIG = {
+      easy: { label: "Easy", timeLimit: 35 },
+      normal: { label: "Normal", timeLimit: 45 },
+      hard: { label: "Hard", timeLimit: 60 },
+    };
+
+    // ----------------------------
+    // HTML (Percentage-style: title row + scoreboard + mode buttons)
+    // ----------------------------
+    container.innerHTML = `
+      <div class="rr-game">
+        <div class="rr-title-row">
+          <h2 class="rr-title"><span>⚖️</span> <span style="color:#ffffff">Ratio & Rate Rush</span></h2>
+
+          <div class="rr-scoreboard">
+            <div class="rr-tag" id="${GAME_ID}-score">Score: 0 / 0</div>
+            <div class="rr-tag" id="${GAME_ID}-streak">Streak: 0 🔥</div>
+            <div class="rr-tag rr-timer" id="${GAME_ID}-timer">⏱ –</div>
+          </div>
+        </div>
+
+        <div class="rr-control-row">
+          <div class="rr-modes">
+            <button class="rr-btn rr-mode" data-mode="easy">Easy</button>
+            <button class="rr-btn rr-mode" data-mode="normal">Normal</button>
+            <button class="rr-btn rr-mode" data-mode="hard">Hard</button>
+          </div>
+
+          <div class="rr-actions">
+            <button class="rr-btn rr-secondary" id="${GAME_ID}-new">New Question</button>
+            <button class="rr-btn rr-secondary" id="${GAME_ID}-reset">Reset</button>
+          </div>
+        </div>
+
+        <div class="rr-card">
+          <div class="rr-qmeta">
+            <div class="rr-pill" id="${GAME_ID}-mode-pill">Mode: –</div>
+            <div class="rr-pill" id="${GAME_ID}-type-pill">Type: –</div>
+          </div>
+
+          <div class="rr-question" id="${GAME_ID}-question">
+            Choose a mode to start.
+          </div>
+
+          <div class="rr-answer-area">
+            <div class="rr-input-wrap" id="${GAME_ID}-input-wrap">
+              <input class="rr-input" id="${GAME_ID}-input" placeholder="Type your answer here…" autocomplete="off"/>
+              <button class="rr-btn" id="${GAME_ID}-submit">Submit</button>
+            </div>
+
+            <div class="rr-choice-wrap hidden" id="${GAME_ID}-choice-wrap">
+              <button class="rr-btn rr-choice" data-choice="A" id="${GAME_ID}-choiceA">A</button>
+              <button class="rr-btn rr-choice" data-choice="B" id="${GAME_ID}-choiceB">B</button>
+            </div>
+          </div>
+
+          <div class="rr-feedback" id="${GAME_ID}-feedback"></div>
+          <div class="rr-solution hidden" id="${GAME_ID}-solution"></div>
+        </div>
+      </div>
+    `;
+
+    // ----------------------------
+    // Minimal CSS (keep it close to your dark arcade feel)
+    // If you already have Percentage-game CSS, delete this.
+    // ----------------------------
+    const styleId = "rr-game-style";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        .rr-game{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; color:#e9e9e9;}
+        .rr-title-row{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+        .rr-title{margin:0; font-size:22px; display:flex; align-items:center; gap:10px;}
+        .rr-scoreboard{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+        .rr-tag{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:6px 10px; border-radius:999px; font-size:13px;}
+        .rr-timer{min-width:84px; text-align:center;}
+        .rr-control-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap;}
+        .rr-modes{display:flex; gap:8px; flex-wrap:wrap;}
+        .rr-actions{display:flex; gap:8px; flex-wrap:wrap;}
+        .rr-btn{background:rgba(255,255,255,0.10); color:#fff; border:1px solid rgba(255,255,255,0.16); padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:600;}
+        .rr-btn:hover{background:rgba(255,255,255,0.14);}
+        .rr-secondary{font-weight:600; opacity:0.95;}
+        .rr-card{margin-top:12px; background:rgba(0,0,0,0.30); border:1px solid rgba(255,255,255,0.14); border-radius:18px; padding:14px;}
+        .rr-qmeta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+        .rr-pill{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); padding:6px 10px; border-radius:999px; font-size:12px;}
+        .rr-question{font-size:16px; line-height:1.35; margin:8px 0 12px;}
+        .rr-answer-area{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+        .rr-input-wrap{display:flex; gap:8px; align-items:center; flex:1; min-width:260px;}
+        .rr-input{flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#fff; padding:10px 12px; border-radius:12px; outline:none;}
+        .rr-input::placeholder{color:rgba(255,255,255,0.45);}
+        .rr-choice-wrap{display:flex; gap:10px; flex-wrap:wrap;}
+        .rr-choice{min-width:220px; text-align:left;}
+        .rr-feedback{margin-top:10px; font-weight:800; min-height:22px;}
+        .rr-solution{margin-top:8px; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.18); padding:10px 12px; border-radius:14px; font-size:13px; line-height:1.35;}
+        .hidden{display:none !important;}
+        .rr-correct{color:#7CFFB2;}
+        .rr-wrong{color:#FF7C7C;}
+      `;
+      document.head.appendChild(style);
+    }
+
+    // ----------------------------
+    // State
+    // ----------------------------
+    let mode = null;
+    let score = 0;
+    let total = 0;
+    let streak = 0;
+
+    let timer = null;
+    let timeLeft = 0;
+
+    let currentQ = null; // {type, prompt, answer, answerFormat, choices?, correctChoice?, solution, inputMode}
+    // inputMode: "text" | "choice"
+
+    // ----------------------------
+    // Helpers
+    // ----------------------------
+    const $ = (id) => document.getElementById(id);
+
+    function setText(id, text) {
+      const el = $(id);
+      if (el) el.textContent = text;
+    }
+
+    function normaliseAnswer(s) {
+      return String(s)
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/[$,]/g, "")
+        .toLowerCase();
+    }
+
+    function stopTimer() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function startTimer(seconds) {
+      stopTimer();
+      timeLeft = seconds;
+      updateTimerUI();
+      timer = setInterval(() => {
+        timeLeft--;
+        updateTimerUI();
+        if (timeLeft <= 0) {
+          stopTimer();
+          handleTimeout();
+        }
+      }, 1000);
+    }
+
+    function updateTimerUI() {
+      if (!mode) return;
+      setText(`${GAME_ID}-timer`, `⏱ ${timeLeft}s`);
+    }
+
+    function setFeedback(isCorrect, msg) {
+      const fb = $(`${GAME_ID}-feedback`);
+      fb.classList.remove("rr-correct", "rr-wrong");
+      fb.classList.add(isCorrect ? "rr-correct" : "rr-wrong");
+      fb.textContent = msg;
+    }
+
+    function showSolution(text) {
+      const sol = $(`${GAME_ID}-solution`);
+      sol.classList.remove("hidden");
+      sol.textContent = text;
+    }
+
+    function hideSolution() {
+      const sol = $(`${GAME_ID}-solution`);
+      sol.classList.add("hidden");
+      sol.textContent = "";
+    }
+
+    function setInputMode(inputMode) {
+      const inputWrap = $(`${GAME_ID}-input-wrap`);
+      const choiceWrap = $(`${GAME_ID}-choice-wrap`);
+      if (inputMode === "choice") {
+        inputWrap.classList.add("hidden");
+        choiceWrap.classList.remove("hidden");
+      } else {
+        choiceWrap.classList.add("hidden");
+        inputWrap.classList.remove("hidden");
+      }
+    }
+
+    function randInt(a, b) {
+      return Math.floor(Math.random() * (b - a + 1)) + a;
+    }
+
+    function gcd(a, b) {
+      a = Math.abs(a); b = Math.abs(b);
+      while (b !== 0) {
+        const t = a % b;
+        a = b; b = t;
+      }
+      return a;
+    }
+
+    function simplifyRatio(a, b) {
+      const g = gcd(a, b);
+      return [a / g, b / g];
+    }
+
+    // ----------------------------
+    // Question Generators
+    // ----------------------------
+    // Each returns:
+    // { type, prompt, inputMode, answer, solution, answerFormat, choices?, correctChoice? }
+    //
+    // answerFormat examples:
+    // - "number" (we compare numeric)
+    // - "ratio" (we compare like "3:5")
+    // - "text"  (exact normalised match)
+    function q_ratioSimplify() {
+      const a = randInt(6, 36);
+      const b = randInt(6, 36);
+      const [sa, sb] = simplifyRatio(a, b);
+      return {
+        type: "Simplify Ratio",
+        prompt: `Simplify the ratio ${a} : ${b}. Give your answer in the form a:b.`,
+        inputMode: "text",
+        answerFormat: "ratio",
+        answer: `${sa}:${sb}`,
+        solution: `Find HCF of ${a} and ${b}, then divide both terms by the HCF → ${sa}:${sb}.`,
+      };
+    }
+
+    function q_shareTotal_easy() {
+      // A:B = p:q, total = T, find A
+      const p = randInt(1, 5);
+      const q = randInt(2, 7);
+      const parts = p + q;
+      const partValue = randInt(3, 15) * 2; // nice totals
+      const totalSum = parts * partValue;
+
+      const A = p * partValue;
+      return {
+        type: "Share in Ratio",
+        prompt: `Ali and Ben share $${totalSum} in the ratio ${p}:${q}. How much does Ali get?`,
+        inputMode: "text",
+        answerFormat: "number",
+        answer: A,
+        solution: `Total parts = ${p}+${q} = ${parts}. 1 part = ${totalSum} ÷ ${parts} = ${partValue}. Ali gets ${p} parts = ${p}×${partValue} = $${A}.`,
+      };
+    }
+
+    function q_differenceRatio_normal() {
+      // A:B:C with difference between two people
+      const a = randInt(2, 5);
+      const b = randInt(4, 7);
+      const c = randInt(6, 10);
+      const diffParts = Math.abs(c - a);
+      const partValue = randInt(5, 20);
+      const diff = diffParts * partValue;
+      const total = (a + b + c) * partValue;
+
+      return {
+        type: "Ratio (Difference)",
+        prompt: `A, B and C share some money in the ratio ${a}:${b}:${c}. If C has $${diff} more than A, find the total amount of money.`,
+        inputMode: "text",
+        answerFormat: "number",
+        answer: total,
+        solution: `Difference in parts = ${c}-${a} = ${diffParts}. 1 part = ${diff} ÷ ${diffParts} = ${partValue}. Total parts = ${a}+${b}+${c} = ${a + b + c}. Total = ${a + b + c}×${partValue} = $${total}.`,
+      };
+    }
+
+    function q_linkedRatios_hard_likePDF1() {
+      // Inspired by PDF Q1 but randomised and simpler numbers
+      // Red:Blue = r:b, Blue:Yellow = b:y. Add K blue, new Red:Blue = Rn:Bn.
+      // We'll generate from a consistent underlying triple.
+      const redUnits = randInt(2, 9);
+      const blueUnits1 = randInt(3, 10);
+      const blueUnits2 = randInt(5, 12);
+      const yellowUnits = randInt(1, 6);
+
+      // LCM for blue units
+      const lcm = (x, y) => (x * y) / gcd(x, y);
+      const commonBlue = lcm(blueUnits1, blueUnits2);
+
+      const mult1 = commonBlue / blueUnits1;
+      const mult2 = commonBlue / blueUnits2;
+
+      // Base units in common scale
+      const R = redUnits * mult1;
+      const B = commonBlue;
+      const Y = yellowUnits * mult2;
+
+      // Convert to actual balls per unit
+      const unitBall = randInt(2, 6) * 2; // even counts
+      let redBalls = R * unitBall;
+      let blueBalls = B * unitBall;
+      let yellowBalls = Y * unitBall;
+
+      // Now choose an "add blue" amount that makes new ratio nice
+      // Pick target ratio Rn:Bn close to original
+      const targetRn = randInt(5, 12);
+      const targetBn = randInt(10, 24);
+
+      // Make target match redBalls
+      const k = redBalls / targetRn;
+      if (!Number.isInteger(k)) {
+        // fallback: force a clean ratio using redBalls itself
+        const g = gcd(redBalls, blueBalls);
+        const rr = redBalls / g;
+        const bb = blueBalls / g;
+        const add = randInt(1, 6) * unitBall;
+        const newBlue = blueBalls + add;
+        // compute equivalent ratio simplified
+        const gg = gcd(redBalls, newBlue);
+        const rr2 = redBalls / gg;
+        const bb2 = newBlue / gg;
+        return {
+          type: "Linked Ratios (Change)",
+          prompt:
+            `A box contains red, blue and yellow balls.\n` +
+            `The ratio of red to blue is ${redUnits}:${blueUnits1} and the ratio of blue to yellow is ${blueUnits2}:${yellowUnits}.\n` +
+            `If ${add} blue balls are added, the ratio of red to blue becomes ${rr2}:${bb2}.\n` +
+            `Find the number of yellow balls.`,
+          inputMode: "text",
+          answerFormat: "number",
+          answer: yellowBalls,
+          solution:
+            `Link the two ratios using a common “blue”.\n` +
+            `Red:Blue = ${R}:${B} and Blue:Yellow = ${B}:${Y} (after scaling).\n` +
+            `So Red:Blue:Yellow = ${R}:${B}:${Y}.\n` +
+            `Given each unit represents ${unitBall} balls → Yellow = ${Y}×${unitBall} = ${yellowBalls}.`,
+        };
+      }
+
+      // If k is integer, compute needed newBlue = targetBn*k
+      const newBlue = targetBn * k;
+      const addBlue = newBlue - blueBalls;
+
+      // Ensure addBlue positive and reasonable; otherwise fallback
+      if (!(addBlue > 0 && addBlue <= 80 && Number.isInteger(addBlue))) {
+        return q_linkedRatios_hard_likePDF1(); // regenerate (bounded by randomness)
+      }
+
+      return {
+        type: "Linked Ratios (Change)",
+        prompt:
+          `A box contains red, blue and yellow balls.\n` +
+          `The ratio of red to blue is ${redUnits}:${blueUnits1} and the ratio of blue to yellow is ${blueUnits2}:${yellowUnits}.\n` +
+          `If ${addBlue} blue balls are added, the ratio of red to blue becomes ${targetRn}:${targetBn}.\n` +
+          `Find the number of yellow balls.`,
+        inputMode: "text",
+        answerFormat: "number",
+        answer: yellowBalls,
+        solution:
+          `Link ratios using a common blue.\n` +
+          `Scale so “blue” matches: Red:Blue:Yellow = ${R}:${B}:${Y}.\n` +
+          `Each unit = ${unitBall} balls → Yellow = ${Y}×${unitBall} = ${yellowBalls}.`,
+      };
+    }
+
+    function q_speedConvert() {
+      const kmh = randInt(18, 90); // typical
+      // convert km/h to m/s: (kmh * 1000) / 3600 = kmh * 5/18
+      const ms = (kmh * 5) / 18;
+      // choose nice kmh multiple of 18 for clean integer ms sometimes
+      const kmh2 = [36, 54, 72, 90][randInt(0, 3)];
+      const ms2 = (kmh2 * 5) / 18; // integer
+      return {
+        type: "Speed Conversion",
+        prompt: `Convert ${kmh2} km/h into m/s.`,
+        inputMode: "text",
+        answerFormat: "number",
+        answer: ms2,
+        solution: `${kmh2} km/h = ${kmh2}×1000 ÷ 3600 = ${kmh2}×(5/18) = ${ms2} m/s.`,
+      };
+    }
+
+    function q_timeTaken_normal() {
+      const speed = [36, 54, 72][randInt(0, 2)];
+      const dist = randInt(12, 60);
+      // time hours = dist / speed
+      const timeH = dist / speed;
+      const timeS = Math.round(timeH * 3600);
+      const mins = Math.floor(timeS / 60);
+      const secs = timeS % 60;
+
+      return {
+        type: "Time Taken",
+        prompt: `A vehicle travels ${dist} km at ${speed} km/h. Find the time taken in minutes and seconds.`,
+        inputMode: "text",
+        answerFormat: "text",
+        answer: `${mins}m ${secs}s`,
+        solution: `Time = distance ÷ speed = ${dist}/${speed} h = ${(timeH).toFixed(4)} h.\nConvert to seconds: ${(timeH).toFixed(4)}×3600 ≈ ${timeS}s = ${mins}m ${secs}s.`,
+      };
+    }
+
+    function q_averageSpeed_normal_likePDF2c() {
+      // two legs, total distance / total time
+      const d1 = randInt(20, 60);
+      const s1 = [36, 54, 72][randInt(0, 2)];
+      const t1 = (d1 / s1) * 3600;
+
+      const d2 = randInt(15, 50);
+      const mins2 = randInt(20, 50);
+      const secs2 = [0, 20, 40][randInt(0, 2)];
+      const t2 = mins2 * 60 + secs2;
+
+      const totalD = d1 + d2;
+      const totalT = t1 + t2;
+      const avg = totalD / (totalT / 3600);
+      const avg3sf = Number(avg.toPrecision(3));
+
+      return {
+        type: "Average Speed",
+        prompt:
+          `A lorry travels ${d1} km at ${s1} km/h.\n` +
+          `Then it travels ${d2} km in ${mins2} minutes ${secs2} seconds.\n` +
+          `Find the average speed for the whole journey (3 s.f.).`,
+        inputMode: "text",
+        answerFormat: "number",
+        answer: avg3sf,
+        solution:
+          `Total distance = ${d1}+${d2} = ${totalD} km.\n` +
+          `Time 1 = ${d1}/${s1} h = ${(t1/60).toFixed(2)} min.\n` +
+          `Time 2 = ${mins2}m ${secs2}s.\n` +
+          `Average speed = total distance ÷ total time.\n` +
+          `= ${totalD} ÷ (${(totalT/3600).toFixed(4)} h) ≈ ${avg.toFixed(4)} km/h → ${avg3sf} km/h (3 s.f.).`,
+      };
+    }
+
+    function q_exchangeDecision_choice_likePDF3() {
+      // Decision question (Choice A/B)
+      // Singapore: 1 SGD = r HKD
+      // HK: 1 HKD = s SGD
+      // amount SGD = A
+      const r = (randInt(540, 620) / 100).toFixed(3); // ~5.40–6.20
+      const s = (randInt(160, 190) / 1000).toFixed(3); // ~0.160–0.190
+      const amt = randInt(200, 800);
+
+      const hkInSG = amt * Number(r);
+      const hkInHK = amt / Number(s);
+      const better = hkInSG > hkInHK ? "A" : "B"; // A = change in Singapore
+      const diff = Math.abs(hkInSG - hkInHK);
+
+      return {
+        type: "Best Exchange",
+        prompt:
+          `Exchange decision:\n` +
+          `In Singapore: 1 SGD = ${r} HKD.\n` +
+          `In Hong Kong: 1 HKD = ${s} SGD.\n` +
+          `Melisa has SGD ${amt}. Where should she change to get MORE HKD?\n` +
+          `A) Change in Singapore\n` +
+          `B) Change in Hong Kong`,
+        inputMode: "choice",
+        choices: {
+          A: `Change in Singapore`,
+          B: `Change in Hong Kong`,
+        },
+        correctChoice: better,
+        answerFormat: "choice",
+        answer: better,
+        solution:
+          `If change in Singapore: ${amt}×${r} = ${hkInSG.toFixed(2)} HKD.\n` +
+          `If change in Hong Kong: ${amt} ÷ ${s} = ${hkInHK.toFixed(2)} HKD.\n` +
+          `Difference ≈ ${diff.toFixed(2)} HKD → choose option ${better}.`,
+      };
+    }
+
+    function q_algebraSpeed_hard_likePDF5() {
+      // Similar structure to PDF Q5 but randomised
+      // half hour at x, then 20 min at 1.2x
+      // total time = 50 min = 5/6 hr
+      // distance = x*(1/2) + 1.2x*(1/3) = 0.5x + 0.4x = 0.9x
+      // average speed given => total distance / total time = avg => 0.9x / (5/6) = avg
+      const avg = [60, 72, 80, 90][randInt(0, 3)];
+      const x = (avg * 5) / 5.4; // from (0.9x)/(5/6) = avg => 0.9x *6/5 = avg => 5.4x/5 = avg => x = 5avg/5.4
+      const xRounded = Number(x.toFixed(1));
+
+      return {
+        type: "Algebra Speed (Boss)",
+        prompt:
+          `Harry drives for 30 minutes at an average speed of x km/h, then for 20 minutes at an average speed of 1.2x km/h.\n` +
+          `Given the average speed for the entire journey is ${avg} km/h, find x (to 1 d.p.).`,
+        inputMode: "text",
+        answerFormat: "number",
+        answer: xRounded,
+        solution:
+          `Distance 1 = x×0.5 = 0.5x.\n` +
+          `Distance 2 = 1.2x×(20/60) = 1.2x×(1/3) = 0.4x.\n` +
+          `Total distance = 0.9x.\n` +
+          `Total time = 50 min = 5/6 h.\n` +
+          `Average speed = total distance ÷ total time:\n` +
+          `${avg} = 0.9x ÷ (5/6) = 0.9x×(6/5) = 1.08x.\n` +
+          `So x = ${avg} ÷ 1.08 = ${xRounded}.`,
+      };
+    }
+
+    function buildQuestion(modeKey) {
+      // Pools by mode
+      const easyPool = [q_ratioSimplify, q_shareTotal_easy, q_speedConvert];
+      const normalPool = [q_ratioSimplify, q_shareTotal_easy, q_differenceRatio_normal, q_timeTaken_normal, q_averageSpeed_normal_likePDF2c];
+      const hardPool = [q_linkedRatios_hard_likePDF1, q_differenceRatio_normal, q_averageSpeed_normal_likePDF2c, q_exchangeDecision_choice_likePDF3, q_algebraSpeed_hard_likePDF5];
+
+      const pool =
+        modeKey === "easy" ? easyPool :
+        modeKey === "normal" ? normalPool :
+        hardPool;
+
+      const fn = pool[randInt(0, pool.length - 1)];
+      return fn();
+    }
+
+    // ----------------------------
+    // Render Question
+    // ----------------------------
+    function renderQuestion(q) {
+      currentQ = q;
+      setText(`${GAME_ID}-type-pill`, `Type: ${q.type}`);
+      setText(`${GAME_ID}-question`, q.prompt);
+
+      // Reset feedback/solution
+      setFeedback(true, "");
+      hideSolution();
+
+      if (q.inputMode === "choice") {
+        setInputMode("choice");
+        $(`${GAME_ID}-choiceA`).textContent = `A) ${q.choices.A}`;
+        $(`${GAME_ID}-choiceB`).textContent = `B) ${q.choices.B}`;
+      } else {
+        setInputMode("text");
+        const input = $(`${GAME_ID}-input`);
+        input.value = "";
+        input.focus();
+      }
+
+      // Restart timer
+      startTimer(MODE_CONFIG[mode].timeLimit);
+    }
+
+    // ----------------------------
+    // Checking answers
+    // ----------------------------
+    function checkAnswer(userRaw) {
+      if (!currentQ) return;
+
+      total++;
+      let correct = false;
+
+      if (currentQ.answerFormat === "number") {
+        // Accept: exact, or small rounding differences if user typed decimals
+        const userNum = Number(String(userRaw).replace(/[^\d.\-]/g, ""));
+        const ans = Number(currentQ.answer);
+        if (Number.isFinite(userNum)) {
+          // Allow tolerance for 3sf/1dp style (0.05)
+          correct = Math.abs(userNum - ans) <= 0.05;
+        }
+      } else if (currentQ.answerFormat === "ratio") {
+        // Accept "a:b" or "a : b"
+        const u = normaliseAnswer(userRaw).replace(/\s/g, "");
+        const a = normaliseAnswer(currentQ.answer).replace(/\s/g, "");
+        correct = u === a;
+      } else if (currentQ.answerFormat === "choice") {
+        correct = String(userRaw).toUpperCase() === String(currentQ.answer).toUpperCase();
+      } else {
+        // text match normalised
+        correct = normaliseAnswer(userRaw) === normaliseAnswer(currentQ.answer);
+      }
+
+      if (correct) {
+        score++;
+        streak++;
+        setFeedback(true, `✅ Correct!`);
+      } else {
+        streak = 0;
+        setFeedback(false, `❌ Not quite.`);
+        showSolution(currentQ.solution + `\n\nAnswer: ${currentQ.answerFormat === "choice" ? currentQ.answer : String(currentQ.answer)}`);
+      }
+
+      setText(`${GAME_ID}-score`, `Score: ${score} / ${total}`);
+      setText(`${GAME_ID}-streak`, `Streak: ${streak} 🔥`);
+
+      stopTimer();
+
+      // Auto-next after a short pause if correct; if wrong, require New Question.
+      if (correct) {
+        setTimeout(() => {
+          if (!mode) return;
+          renderQuestion(buildQuestion(mode));
+        }, 650);
+      }
+    }
+
+    function handleTimeout() {
+      total++;
+      streak = 0;
+      setText(`${GAME_ID}-score`, `Score: ${score} / ${total}`);
+      setText(`${GAME_ID}-streak`, `Streak: ${streak} 🔥`);
+      setFeedback(false, `⏰ Time’s up.`);
+      if (currentQ) {
+        showSolution(currentQ.solution + `\n\nAnswer: ${currentQ.answerFormat === "choice" ? currentQ.answer : String(currentQ.answer)}`);
+      }
+    }
+
+    // ----------------------------
+    // Events
+    // ----------------------------
+    container.querySelectorAll(".rr-mode").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        mode = btn.dataset.mode;
+        setText(`${GAME_ID}-mode-pill`, `Mode: ${MODE_CONFIG[mode].label}`);
+        score = 0; total = 0; streak = 0;
+        setText(`${GAME_ID}-score`, `Score: 0 / 0`);
+        setText(`${GAME_ID}-streak`, `Streak: 0 🔥`);
+        setFeedback(true, "");
+        hideSolution();
+        renderQuestion(buildQuestion(mode));
+      });
+    });
+
+    $(`${GAME_ID}-new`).addEventListener("click", () => {
+      if (!mode) return;
+      renderQuestion(buildQuestion(mode));
+    });
+
+    $(`${GAME_ID}-reset`).addEventListener("click", () => {
+      mode = null;
+      score = 0; total = 0; streak = 0;
+      stopTimer();
+      setText(`${GAME_ID}-mode-pill`, `Mode: –`);
+      setText(`${GAME_ID}-type-pill`, `Type: –`);
+      setText(`${GAME_ID}-timer`, `⏱ –`);
+      setText(`${GAME_ID}-score`, `Score: 0 / 0`);
+      setText(`${GAME_ID}-streak`, `Streak: 0 🔥`);
+      setText(`${GAME_ID}-question`, `Choose a mode to start.`);
+      setFeedback(true, "");
+      hideSolution();
+      setInputMode("text");
+      $(`${GAME_ID}-input`).value = "";
+    });
+
+    $(`${GAME_ID}-submit`).addEventListener("click", () => {
+      if (!currentQ || currentQ.inputMode !== "text") return;
+      checkAnswer($(`${GAME_ID}-input`).value);
+    });
+
+    $(`${GAME_ID}-input`).addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && currentQ && currentQ.inputMode === "text") {
+        checkAnswer($(`${GAME_ID}-input`).value);
+      }
+    });
+
+    container.querySelectorAll(".rr-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!currentQ || currentQ.inputMode !== "choice") return;
+        const choice = btn.dataset.choice;
+        checkAnswer(choice);
+      });
+    });
+  }
+
+  // Auto-init
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initRatioRateGame);
+  } else {
+    initRatioRateGame();
+  }
+})();
