@@ -1,206 +1,605 @@
+/* =========================
+   RATIO & RATE GAME (MM006)
+   UPDATED ✅
+   - Level names: G3 (was Standard) + G1 (was G1)
+   - Renamed generator: genG1UnitConversion(mode) ➜ genG1(mode)
+   - G1 now includes:
+     ✅ Unit-conversion ratios (e.g., 350 mL : 7 L)
+     ✅ Mixed numbers / fractions / decimals in ratios (e.g., 1/4 : 1.5, 1 1/2 : 3/4)
+   RETURN IN 3 PARTS ✅
+   ========================= */
+
+/* =========================
+   PART 1 / 3 ✅
+   Paste PART 2 directly BELOW this, then PART 3 below PART 2
+   ========================= */
+
 (function () {
   function initRatioRateGame() {
     const container = document.getElementById("ratio-rate-game-container");
     if (!container) return;
 
-    // ----------------------------
-    // Config
-    // ----------------------------
-    const GAME_ID = "rr"; // prefix for element IDs
-    const TOTAL_QUESTIONS_PER_SESSION = 10;
-
-    // Timer (seconds) by mode
-    const MODE_CONFIG = {
-      easy: { label: "Easy", timeLimit: 35 },
-      normal: { label: "Normal", timeLimit: 45 },
-      hard: { label: "Hard", timeLimit: 60 },
-    };
-
-    // ----------------------------
-    // HTML (Percentage-style: title row + scoreboard + mode buttons)
-    // ----------------------------
+    // ---------- HTML (SAME STRUCTURE / CLASSES AS PERCENTAGE) ----------
+    // ✅ Level selector: G3 + G1
     container.innerHTML = `
-      <div class="rr-game">
-        <div class="rr-title-row">
-          <h2 class="rr-title"><span>⚖️</span> <span style="color:#ffffff">Ratio & Rate Rush</span></h2>
+      <div class="sf-game sfp-theme">
+        <div class="sf-title-row">
+          <h2 class="sf-title">
+            <span>⚖️</span>
+            <span style="color:#ffffff">Game — Ratio & Rate Rush!</span>
+            <span class="sf-tag sfp-tag">MM006</span>
+          </h2>
 
-          <div class="rr-scoreboard">
-            <div class="rr-tag" id="${GAME_ID}-score">Score: 0 / 0</div>
-            <div class="rr-tag" id="${GAME_ID}-streak">Streak: 0 🔥</div>
-            <div class="rr-tag rr-timer" id="${GAME_ID}-timer">⏱ –</div>
+          <div class="sf-scoreboard">
+            <div class="sf-pill" id="sf-score">Score: 0 / 0</div>
+            <div class="sf-pill" id="sf-streak">Streak: 0 🔥</div>
+            <div class="sf-pill sf-timer" id="sf-timer">⏱ –</div>
           </div>
         </div>
 
-        <div class="rr-control-row">
-          <div class="rr-modes">
-            <button class="rr-btn rr-mode" data-mode="easy">Easy</button>
-            <button class="rr-btn rr-mode" data-mode="normal">Normal</button>
-            <button class="rr-btn rr-mode" data-mode="hard">Hard</button>
+        <div class="sf-control-row">
+          <div class="sf-control">
+            <label for="sf-level">Level:</label>
+            <select id="sf-level">
+              <option value="g3" selected>G3</option>
+              <option value="g1">G1</option>
+            </select>
           </div>
 
-          <div class="rr-actions">
-            <button class="rr-btn rr-secondary" id="${GAME_ID}-new">New Question</button>
-            <button class="rr-btn rr-secondary" id="${GAME_ID}-reset">Reset</button>
+          <div class="sf-control">
+            <label for="sf-topic">Topic:</label>
+            <select id="sf-topic">
+              <option value="mixed" selected>Mixed (All)</option>
+              <option value="ratioBasics">Ratio Basics</option>
+              <option value="shareRatio">Sharing in Ratio</option>
+              <option value="linkedRatio">Linked Ratios</option>
+              <option value="speed">Speed</option>
+              <option value="avgSpeed">Average Speed</option>
+              <option value="unitRate">Unit Rate</option>
+              <option value="exchange">Best Deal / Exchange</option>
+              <option value="g1">G1 Mixed (Units + Fractions)</option>
+            </select>
+          </div>
+
+          <div class="sf-control">
+            <label for="sf-mode">Mode:</label>
+            <select id="sf-mode">
+              <option value="warmup">Warm-Up (No Timer)</option>
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard</option>
+            </select>
           </div>
         </div>
 
-        <div class="rr-card">
-          <div class="rr-qmeta">
-            <div class="rr-pill" id="${GAME_ID}-mode-pill">Mode: –</div>
-            <div class="rr-pill" id="${GAME_ID}-type-pill">Type: –</div>
-          </div>
-
-          <div class="rr-question" id="${GAME_ID}-question">
-            Choose a mode to start.
-          </div>
-
-          <div class="rr-answer-area">
-            <div class="rr-input-wrap" id="${GAME_ID}-input-wrap">
-              <input class="rr-input" id="${GAME_ID}-input" placeholder="Type your answer here…" autocomplete="off"/>
-              <button class="rr-btn" id="${GAME_ID}-submit">Submit</button>
+        <div class="sf-question-box">
+          <div class="sf-q-left">
+            <div class="sf-sub" id="sf-instructions">
+              10 questions per quiz. Pick the best answer. (No answer reveal)
             </div>
 
-            <div class="rr-choice-wrap hidden" id="${GAME_ID}-choice-wrap">
-              <button class="rr-btn rr-choice" data-choice="A" id="${GAME_ID}-choiceA">A</button>
-              <button class="rr-btn rr-choice" data-choice="B" id="${GAME_ID}-choiceB">B</button>
+            <div class="sf-question-row">
+              <div class="sf-question" id="sf-question">—</div>
+              <div class="sf-shape" id="sf-shape" aria-hidden="true"></div>
             </div>
           </div>
 
-          <div class="rr-feedback" id="${GAME_ID}-feedback"></div>
-          <div class="rr-solution hidden" id="${GAME_ID}-solution"></div>
+          <div class="sf-q-right">
+            <div class="sf-meta" id="sf-meta">Ready</div>
+            <div class="sf-hint" id="sf-hint" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="sf-options" id="sf-options"></div>
+
+        <div class="sf-bottom">
+          <div class="sf-feedback" id="sf-feedback"></div>
+
+          <div class="sf-buttons">
+            <button class="sf-btn sf-primary sfp-primary" id="sf-next">Start Quiz ▶</button>
+            <button class="sf-btn sf-secondary" id="sf-reset">Reset 🔄</button>
+          </div>
         </div>
       </div>
     `;
 
-    // ----------------------------
-    // Minimal CSS (keep it close to your dark arcade feel)
-    // If you already have Percentage-game CSS, delete this.
-    // ----------------------------
-    const styleId = "rr-game-style";
+    // ---------- CSS (COPY SAME AS PERCENTAGE — KEEP UI IDENTICAL) ----------
+    const styleId = "sf-ratio-rate-style-mm006";
     if (!document.getElementById(styleId)) {
       const style = document.createElement("style");
       style.id = styleId;
-      style.textContent = `
-        .rr-game{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; color:#e9e9e9;}
-        .rr-title-row{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
-        .rr-title{margin:0; font-size:22px; display:flex; align-items:center; gap:10px;}
-        .rr-scoreboard{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
-        .rr-tag{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:6px 10px; border-radius:999px; font-size:13px;}
-        .rr-timer{min-width:84px; text-align:center;}
-        .rr-control-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap;}
-        .rr-modes{display:flex; gap:8px; flex-wrap:wrap;}
-        .rr-actions{display:flex; gap:8px; flex-wrap:wrap;}
-        .rr-btn{background:rgba(255,255,255,0.10); color:#fff; border:1px solid rgba(255,255,255,0.16); padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:600;}
-        .rr-btn:hover{background:rgba(255,255,255,0.14);}
-        .rr-secondary{font-weight:600; opacity:0.95;}
-        .rr-card{margin-top:12px; background:rgba(0,0,0,0.30); border:1px solid rgba(255,255,255,0.14); border-radius:18px; padding:14px;}
-        .rr-qmeta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
-        .rr-pill{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); padding:6px 10px; border-radius:999px; font-size:12px;}
-        .rr-question{font-size:16px; line-height:1.35; margin:8px 0 12px;}
-        .rr-answer-area{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-        .rr-input-wrap{display:flex; gap:8px; align-items:center; flex:1; min-width:260px;}
-        .rr-input{flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#fff; padding:10px 12px; border-radius:12px; outline:none;}
-        .rr-input::placeholder{color:rgba(255,255,255,0.45);}
-        .rr-choice-wrap{display:flex; gap:10px; flex-wrap:wrap;}
-        .rr-choice{min-width:220px; text-align:left;}
-        .rr-feedback{margin-top:10px; font-weight:800; min-height:22px;}
-        .rr-solution{margin-top:8px; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.18); padding:10px 12px; border-radius:14px; font-size:13px; line-height:1.35;}
-        .hidden{display:none !important;}
-        .rr-correct{color:#7CFFB2;}
-        .rr-wrong{color:#FF7C7C;}
+      style.innerHTML = `
+        /* Base (keeps your sf- layout) */
+        .sf-game{
+          color:#e5e7eb;
+          padding:24px;
+          border-radius:18px;
+          max-width:980px;
+          margin:24px auto;
+          position:relative;
+          overflow:hidden;
+          border:1px solid rgba(148,163,184,0.25);
+          box-shadow:0 18px 45px rgba(0,0,0,.55);
+        }
+
+        /* THEME (same as Percentage: left purple + right orange) */
+        .sfp-theme{
+          background: radial-gradient(1200px 600px at 20% 0%, rgba(168,85,247,.18), transparent 55%),
+                      radial-gradient(900px 520px at 90% 20%, rgba(255,159,67,.18), transparent 55%),
+                      linear-gradient(180deg, #120a2a 0%, #070a14 100%);
+          border-color: rgba(255,255,255,0.12);
+        }
+        .sfp-tag{
+          border:1px solid rgba(255,183,3,0.55);
+          background:rgba(255,183,3,0.14);
+          color:#ffe8a3;
+        }
+        /* DO NOT change button colour/shape */
+        .sfp-primary{
+          background:linear-gradient(135deg,#FFB703,#00D1FF);
+          color:#06101f;
+        }
+
+        .sf-title-row{
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:12px;
+          flex-wrap:wrap;
+        }
+        .sf-title{
+          margin:0;
+          display:flex;
+          align-items:center;
+          gap:10px;
+          font-size:1.45rem;
+        }
+        .sf-tag{
+          font-size:.78rem;
+          padding:3px 10px;
+          border-radius:999px;
+        }
+
+        .sf-scoreboard{
+          display:flex;
+          gap:8px;
+          align-items:center;
+          flex-wrap:wrap;
+        }
+        .sf-pill{
+          font-size:.86rem;
+          padding:5px 12px;
+          border-radius:999px;
+          border:1px solid rgba(148,163,184,0.28);
+          background:rgba(15,23,42,0.65);
+        }
+        .sf-timer{
+          border-color:rgba(34,197,94,0.35);
+          background:rgba(34,197,94,0.12);
+          color:#d1fae5;
+        }
+
+        .sf-control-row{
+          margin-top:12px;
+          display:flex;
+          gap:12px;
+          flex-wrap:wrap;
+          align-items:center;
+        }
+        .sf-control{
+          display:flex;
+          gap:8px;
+          align-items:center;
+          font-size:.9rem;
+        }
+        .sf-control select{
+          background:#050b16;
+          color:#e5e7eb;
+          border:1px solid rgba(148,163,184,0.35);
+          border-radius:999px;
+          padding:4px 12px;
+          font-size:.9rem;
+          outline:none;
+        }
+
+        .sf-question-box{
+          margin-top:14px;
+          padding:14px;
+          border-radius:14px;
+          border:1px solid rgba(148,163,184,0.25);
+          background:rgba(2,6,23,0.65);
+          display:flex;
+          justify-content:space-between;
+          gap:16px;
+          flex-wrap:wrap;
+        }
+        .sf-q-left{min-width:280px;flex:1;}
+        .sf-sub{font-size:.92rem;opacity:.9;margin-bottom:6px;}
+        .sf-question-row{
+          display:flex;
+          gap:14px;
+          align-items:center;
+          justify-content:space-between;
+          flex-wrap:wrap;
+        }
+        .sf-question{
+          font-size:1.22rem;
+          font-weight:700;
+          letter-spacing:.2px;
+          flex: 1;
+          min-width: 240px;
+        }
+        .sf-shape{width: 170px;max-width: 100%;display:flex;justify-content:flex-end;}
+        .sf-q-right{min-width:260px;}
+        .sf-meta{font-size:.95rem;opacity:.9;}
+        .sf-hint{
+          margin-top:8px;
+          font-size:.92rem;
+          color:#c7d2fe;
+          min-height:18px;
+        }
+
+        .sf-options{
+          margin-top:14px;
+          display:grid;
+          grid-template-columns:repeat(2,1fr);
+          gap:10px;
+        }
+        .sf-option{
+          position:relative;
+          border-radius:14px;
+          border:1px solid rgba(148,163,184,0.25);
+          background:rgba(15,23,42,0.55);
+          padding:12px 12px 12px 46px;
+          cursor:pointer;
+          transition:transform .12s, border-color .12s, box-shadow .12s;
+          user-select:none;
+        }
+        .sf-option:hover{
+          transform:translateY(-2px);
+          border-color:rgba(0,209,255,0.55);
+          box-shadow:0 10px 24px rgba(0,0,0,.45);
+        }
+        .sf-option.correct{
+          border-color:rgba(34,197,94,0.9) !important;
+          box-shadow:0 0 0 2px rgba(34,197,94,0.25), 0 14px 28px rgba(0,0,0,.45);
+        }
+        .sf-option.wrong{
+          border-color:rgba(239,68,68,0.9) !important;
+          box-shadow:0 0 0 2px rgba(239,68,68,0.2), 0 14px 28px rgba(0,0,0,.45);
+        }
+        .sf-letter{
+          position:absolute;
+          left:12px;
+          top:10px;
+          width:26px;
+          height:26px;
+          border-radius:999px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-weight:800;
+          font-size:.9rem;
+          border:1px solid rgba(148,163,184,0.35);
+          background:rgba(2,6,23,0.65);
+          color:#e5e7eb;
+        }
+        .sf-formula{font-size:1.08rem;font-weight:750;letter-spacing:.2px;}
+        .sf-desc{display:none;}
+
+        .sf-bottom{
+          margin-top:12px;
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:10px;
+          flex-wrap:wrap;
+        }
+        .sf-feedback{min-height:22px;font-size:1rem;}
+        .sf-buttons{display:flex;gap:10px;flex-wrap:wrap;}
+        .sf-btn{
+          border:none;
+          border-radius:999px;
+          padding:8px 16px;
+          cursor:pointer;
+          font-weight:700;
+        }
+        .sf-primary:hover{
+          transform:translateY(-1px);
+          box-shadow:0 10px 24px rgba(0,209,255,.20);
+        }
+        .sf-secondary{
+          background:rgba(2,6,23,0.65);
+          border:1px solid rgba(148,163,184,0.35);
+          color:#e5e7eb;
+        }
+        .sf-secondary:hover{background:rgba(15,23,42,0.7);}
+
+        .sf-confetti{
+          position:fixed;
+          z-index:99999;
+          pointer-events:none;
+          animation:sf-confetti-fall 1.8s ease-out forwards;
+          font-size:1.7rem;
+        }
+        @keyframes sf-confetti-fall{
+          0%{transform:translateY(-10vh) rotate(0deg);opacity:0;}
+          10%{opacity:1;}
+          100%{transform:translateY(110vh) rotate(340deg);opacity:0;}
+        }
+        .sf-stream{
+          position:fixed;
+          z-index:99999;
+          pointer-events:none;
+          font-size:1.7rem;
+          user-select:none;
+          will-change:transform, opacity;
+        }
+
+        @media(max-width:820px){
+          .sf-options{grid-template-columns:1fr;}
+        }
       `;
       document.head.appendChild(style);
     }
 
-    // ----------------------------
-    // State
-    // ----------------------------
-    let mode = null;
+    // ---------- DATA / SETTINGS ----------
+    const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    const emojis = ["🎉", "🎊", "🎈", "✨", "💫", "🌟", "🤩", "💯", "🥇", "🥈", "🥉"];
+
+    const DIFF = {
+      warmup: { time: 0 },
+      easy: { time: 60 },
+      normal: { time: 45 },
+      hard: { time: 30 },
+    };
+
+    // ---------- ELEMENTS ----------
+    const levelSel = document.getElementById("sf-level");
+    const topicSel = document.getElementById("sf-topic");
+    const modeSel = document.getElementById("sf-mode");
+
+    const scoreEl = document.getElementById("sf-score");
+    const streakEl = document.getElementById("sf-streak");
+    const timerEl = document.getElementById("sf-timer");
+
+    const questionEl = document.getElementById("sf-question");
+    const metaEl = document.getElementById("sf-meta");
+    const hintEl = document.getElementById("sf-hint");
+    const feedbackEl = document.getElementById("sf-feedback");
+    const optionsEl = document.getElementById("sf-options");
+
+    const nextBtn = document.getElementById("sf-next");
+    const resetBtn = document.getElementById("sf-reset");
+
+    // ---------- STATE ----------
+    const TOTAL_QUESTIONS = 10;
+
+    let inProgress = false;
+    let locked = false;
+    let attemptedThisQ = false;
+
     let score = 0;
     let total = 0;
     let streak = 0;
+    let qIndex = 0;
 
-    let timer = null;
+    let timerId = null;
     let timeLeft = 0;
 
-    let currentQ = null; // {type, prompt, answer, answerFormat, choices?, correctChoice?, solution, inputMode}
-    // inputMode: "text" | "choice"
+    let current = null;
 
-    // ----------------------------
-    // Helpers
-    // ----------------------------
-    const $ = (id) => document.getElementById(id);
+    // ---------- AUDIO (Option C – SAME AS YOUR OTHER GAMES) ----------
+    const SFX = {
+      correct: "https://scholarspace.academy/wp-content/uploads/2026/01/Games-Correct1.mp3",
+      wrong: "https://scholarspace.academy/wp-content/uploads/2026/01/Games-Wrong1.mp3",
+      timeup: "https://scholarspace.academy/wp-content/uploads/2026/01/Games-Timeup1.mp3",
+    };
 
-    function setText(id, text) {
-      const el = $(id);
-      if (el) el.textContent = text;
+    const sfxCorrect = new Audio(SFX.correct);
+    const sfxWrong = new Audio(SFX.wrong);
+    const sfxTimeUp = new Audio(SFX.timeup);
+
+    [sfxCorrect, sfxWrong, sfxTimeUp].forEach((a) => {
+      a.preload = "auto";
+      a.volume = 0.55;
+    });
+
+    // iPad/Safari: unlock audio on first user gesture
+    let audioUnlocked = false;
+    function unlockAudioOnce() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+
+      [sfxCorrect, sfxWrong, sfxTimeUp].forEach((a) => {
+        try {
+          a.muted = true;
+          const p = a.play();
+          if (p && typeof p.then === "function") {
+            p.then(() => {
+              a.pause();
+              a.currentTime = 0;
+              a.muted = false;
+            }).catch(() => {
+              a.muted = false;
+            });
+          } else {
+            a.muted = false;
+          }
+        } catch (e) {}
+      });
+    }
+    document.addEventListener("pointerdown", unlockAudioOnce, { once: true });
+    document.addEventListener("touchstart", unlockAudioOnce, { once: true });
+    document.addEventListener("click", unlockAudioOnce, { once: true });
+
+    function safePlay(audioEl) {
+      try {
+        audioEl.currentTime = 0;
+        const p = audioEl.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch (e) {}
+    }
+    function playCorrectSound() { safePlay(sfxCorrect); }
+    function playWrongSound() { safePlay(sfxWrong); }
+    function playTimeUpSound() { safePlay(sfxTimeUp); }
+
+    /* =========================
+       END OF PART 1
+       (Paste PART 2 below)
+       ========================= */
+	  
+	  
+	  /* =========================
+   PART 2 / 3 ✅
+   Paste this directly BELOW Part 1
+   ========================= */
+
+    // ---------- CONFETTI (SAME AS PERCENTAGE) ----------
+    function shootPopperStream(originX, originY, side, totalCount) {
+      let count = 0;
+      const interval = setInterval(() => {
+        if (count >= totalCount) { clearInterval(interval); return; }
+        const span = document.createElement("span");
+        span.className = "sf-stream";
+        span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        document.body.appendChild(span);
+
+        const startX = originX + (Math.random() - 0.5) * 16;
+        const startY = originY + (Math.random() - 0.5) * 16;
+
+        const screenW = window.innerWidth || 1200;
+        const screenH = window.innerHeight || 800;
+
+        const targetX = screenW * 0.5 + (Math.random() - 0.5) * screenW * 0.25;
+        const targetY = screenH * 0.32 + (Math.random() - 0.5) * screenH * 0.12;
+
+        const controlX = side === "left"
+          ? screenW * 0.28 + Math.random() * screenW * 0.12
+          : screenW * 0.72 - Math.random() * screenW * 0.12;
+        const controlY = screenH * 0.12 + Math.random() * screenH * 0.1;
+
+        const startTime = performance.now();
+        const duration = 900 + Math.random() * 350;
+
+        function animate(now) {
+          const tRaw = (now - startTime) / duration;
+          if (tRaw >= 1) { span.remove(); return; }
+          const t = 1 - Math.pow(1 - tRaw, 2);
+          const u = 1 - t;
+
+          const x = u * u * startX + 2 * u * t * controlX + t * t * targetX;
+          const y = u * u * startY + 2 * u * t * controlY + t * t * targetY;
+
+          span.style.left = x + "px";
+          span.style.top = y + "px";
+
+          let opacity = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
+          span.style.opacity = String(Math.max(0, Math.min(1, opacity)));
+
+          requestAnimationFrame(animate);
+        }
+        span.style.opacity = "1";
+        requestAnimationFrame(animate);
+        count++;
+      }, 24);
     }
 
-    function normaliseAnswer(s) {
-      return String(s)
-        .trim()
-        .replace(/\s+/g, " ")
-        .replace(/[$,]/g, "")
-        .toLowerCase();
+    function launchConfetti(intensity) {
+      const base = 20;
+      const factor = intensity || 1;
+      const count = Math.max(10, Math.round(base * factor));
+
+      for (let i = 0; i < count; i++) {
+        const span = document.createElement("span");
+        span.className = "sf-confetti";
+        span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        span.style.left = Math.random() * 100 + "vw";
+        span.style.top = Math.random() * 5 - 10 + "vh";
+        span.style.animationDelay = Math.random() * 0.7 + "s";
+        span.style.animationDuration = 1.4 + Math.random() * 0.8 + "s";
+        document.body.appendChild(span);
+        setTimeout(() => span.remove(), 2200);
+      }
+
+      const h = window.innerHeight || 800;
+      const w = window.innerWidth || 1200;
+      const totalPerSide = 12 + Math.round(5 * factor);
+      shootPopperStream(80, h - 80, "left", totalPerSide);
+      shootPopperStream(w - 80, h - 80, "right", totalPerSide);
+    }
+
+    // ---------- HELPERS ----------
+    function getModeCfg() { return DIFF[modeSel.value] || DIFF.normal; }
+    function isWarmup() { return modeSel.value === "warmup"; }
+    function isG1() { return (levelSel && levelSel.value === "g1"); } // ✅ G1 vs G3
+
+    function enforceTopicRules() {
+      // Easy/Normal/Hard: force Mixed + lock. Warm-up: allow switching.
+      if (isWarmup()) {
+        topicSel.disabled = false;
+        levelSel.disabled = false;
+
+        // If G1, block speed topics
+        if (isG1() && (topicSel.value === "speed" || topicSel.value === "avgSpeed")) topicSel.value = "g1";
+      } else {
+        topicSel.value = "mixed";
+        topicSel.disabled = true;
+        levelSel.disabled = true;
+      }
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `Score: ${score} / ${total}`;
+      streakEl.textContent = `Streak: ${streak} 🔥`;
     }
 
     function stopTimer() {
-      if (timer) clearInterval(timer);
-      timer = null;
+      if (timerId) clearInterval(timerId);
+      timerId = null;
     }
-
-    function startTimer(seconds) {
+    function startTimer() {
       stopTimer();
-      timeLeft = seconds;
-      updateTimerUI();
-      timer = setInterval(() => {
+      const cfg = getModeCfg();
+      timeLeft = cfg.time;
+
+      if (isWarmup() || cfg.time <= 0) {
+        timerEl.textContent = "☕ Warm-Up (No Timer)";
+        return;
+      }
+
+      timerEl.textContent = `⏱ ${timeLeft}s`;
+      timerId = setInterval(() => {
         timeLeft--;
-        updateTimerUI();
         if (timeLeft <= 0) {
+          timeLeft = 0;
+          timerEl.textContent = "⏱ 0s";
           stopTimer();
-          handleTimeout();
+          timeUp();
+        } else {
+          timerEl.textContent = `⏱ ${timeLeft}s`;
         }
       }, 1000);
     }
 
-    function updateTimerUI() {
-      if (!mode) return;
-      setText(`${GAME_ID}-timer`, `⏱ ${timeLeft}s`);
+    function timeUp() {
+      if (locked || isWarmup() || !inProgress) return;
+      locked = false;
+      feedbackEl.textContent = "⏰ Time’s up! You can still answer for 0.5 points.";
+      playTimeUpSound();
     }
 
-    function setFeedback(isCorrect, msg) {
-      const fb = $(`${GAME_ID}-feedback`);
-      fb.classList.remove("rr-correct", "rr-wrong");
-      fb.classList.add(isCorrect ? "rr-correct" : "rr-wrong");
-      fb.textContent = msg;
-    }
-
-    function showSolution(text) {
-      const sol = $(`${GAME_ID}-solution`);
-      sol.classList.remove("hidden");
-      sol.textContent = text;
-    }
-
-    function hideSolution() {
-      const sol = $(`${GAME_ID}-solution`);
-      sol.classList.add("hidden");
-      sol.textContent = "";
-    }
-
-    function setInputMode(inputMode) {
-      const inputWrap = $(`${GAME_ID}-input-wrap`);
-      const choiceWrap = $(`${GAME_ID}-choice-wrap`);
-      if (inputMode === "choice") {
-        inputWrap.classList.add("hidden");
-        choiceWrap.classList.remove("hidden");
-      } else {
-        choiceWrap.classList.add("hidden");
-        inputWrap.classList.remove("hidden");
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
       }
+      return a;
     }
 
-    function randInt(a, b) {
-      return Math.floor(Math.random() * (b - a + 1)) + a;
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     function gcd(a, b) {
@@ -217,459 +616,819 @@
       return [a / g, b / g];
     }
 
-    // ----------------------------
-    // Question Generators
-    // ----------------------------
-    // Each returns:
-    // { type, prompt, inputMode, answer, solution, answerFormat, choices?, correctChoice? }
-    //
-    // answerFormat examples:
-    // - "number" (we compare numeric)
-    // - "ratio" (we compare like "3:5")
-    // - "text"  (exact normalised match)
-    function q_ratioSimplify() {
-      const a = randInt(6, 36);
-      const b = randInt(6, 36);
+    function uniqueStrings(seedArr, correct) {
+      const out = [];
+      const seen = new Set([correct]);
+      seedArr.forEach((s) => {
+        if (!seen.has(s)) { seen.add(s); out.push(s); }
+      });
+      return out;
+    }
+
+    function make8OptionsFromCorrect(correctMain, wrongMains) {
+      const correctObj = { main: correctMain, sub: "" };
+      const wrongObjs = wrongMains.map((x) => ({ main: x, sub: "" }));
+
+      while (wrongObjs.length < 7) {
+        wrongObjs.push({ main: wrongMains[wrongObjs.length % wrongMains.length], sub: "" });
+      }
+
+      const tagged = [correctObj].concat(wrongObjs.slice(0, 7)).map((o, i) => ({ o, i }));
+      const shuffled = shuffle(tagged);
+      const newCorrectIndex = shuffled.findIndex((x) => x.i === 0);
+
+      return { options: shuffled.map((x) => x.o), correctIndex: newCorrectIndex };
+    }
+
+    function renderOptions(optionObjs, correctIndex) {
+      optionsEl.innerHTML = "";
+      optionObjs.forEach((opt, i) => {
+        const card = document.createElement("div");
+        card.className = "sf-option";
+        card.dataset.correct = (i === correctIndex) ? "1" : "0";
+        card.innerHTML = `
+          <div class="sf-letter">${letters[i] || "?"}</div>
+          <div class="sf-formula">${opt.main}</div>
+          <div class="sf-desc"></div>
+        `;
+        card.addEventListener("click", () => handlePick(card));
+        optionsEl.appendChild(card);
+      });
+    }
+
+    // ---------- FRACTION / RATIONAL HELPERS (for G1 mixed numbers, fractions, decimals) ----------
+    // Rational stored as {n, d} with d>0, simplified
+    function simpRat(n, d) {
+      if (d === 0) return { n: 0, d: 1 };
+      if (d < 0) { n = -n; d = -d; }
+      const g = gcd(Math.abs(n), Math.abs(d));
+      return { n: n / g, d: d / g };
+    }
+
+    function ratMul(a, b) { return simpRat(a.n * b.n, a.d * b.d); }
+    function ratDiv(a, b) { return simpRat(a.n * b.d, a.d * b.n); }
+
+    function ratFromFrac(n, d) { return simpRat(n, d); }
+
+    // Decimal like 1.5 -> 3/2 (limited dp)
+    function ratFromDecimal(x) {
+      const s = String(x);
+      if (!s.includes(".")) return simpRat(Number(x), 1);
+      const dp = s.split(".")[1].length;
+      const m = Math.pow(10, dp);
+      return simpRat(Math.round(Number(x) * m), m);
+    }
+
+    // Mixed number: w a/b
+    function ratFromMixed(w, a, b) {
+      return simpRat(w * b + a, b);
+    }
+
+    function ratToNiceString(r) {
+      // show as simplified fraction if not integer
+      if (r.d === 1) return `${r.n}`;
+      return `${r.n}/${r.d}`;
+    }
+
+    /* =========================
+       QUESTION GENERATORS (G3 - your original ones)
+       ========================= */
+
+    function genRatioBasics(mode) {
+      const a = (mode === "hard") ? randInt(12, 48) : randInt(8, 36);
+      const b = (mode === "hard") ? randInt(12, 48) : randInt(8, 36);
       const [sa, sb] = simplifyRatio(a, b);
-      return {
-        type: "Simplify Ratio",
-        prompt: `Simplify the ratio ${a} : ${b}. Give your answer in the form a:b.`,
-        inputMode: "text",
-        answerFormat: "ratio",
-        answer: `${sa}:${sb}`,
-        solution: `Find HCF of ${a} and ${b}, then divide both terms by the HCF → ${sa}:${sb}.`,
-      };
+      const correct = `${sa}:${sb}`;
+
+      const wrongSeeds = uniqueStrings([
+        `${a}:${b}`, `${sb}:${sa}`, `${sa}:${sb + 1}`,
+        `${Math.max(1, sa - 1)}:${sb}`, `${sa + 1}:${sb}`,
+        `${sa}:${Math.max(1, sb - 1)}`, `${sa * 2}:${sb}`, `${sa}:${sb * 2}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `Simplify the ratio <b>${a} : ${b}</b>.`, hint: `Divide both terms by the HCF.`, options: built.options, correctIndex: built.correctIndex };
     }
 
-    function q_shareTotal_easy() {
-      // A:B = p:q, total = T, find A
-      const p = randInt(1, 5);
-      const q = randInt(2, 7);
+    function genShareRatio(mode) {
+      const p = randInt(2, 5);
+      const q = randInt(3, 7);
       const parts = p + q;
-      const partValue = randInt(3, 15) * 2; // nice totals
+
+      const partValue = (mode === "hard") ? randInt(6, 18) : randInt(4, 15);
       const totalSum = parts * partValue;
+      const shareA = p * partValue;
 
-      const A = p * partValue;
-      return {
-        type: "Share in Ratio",
-        prompt: `Ali and Ben share $${totalSum} in the ratio ${p}:${q}. How much does Ali get?`,
-        inputMode: "text",
-        answerFormat: "number",
-        answer: A,
-        solution: `Total parts = ${p}+${q} = ${parts}. 1 part = ${totalSum} ÷ ${parts} = ${partValue}. Ali gets ${p} parts = ${p}×${partValue} = $${A}.`,
-      };
+      const correct = `$${shareA}`;
+      const wrongSeeds = uniqueStrings([
+        `$${q * partValue}`, `$${(p + 1) * partValue}`, `$${Math.max(1, (p - 1)) * partValue}`,
+        `$${totalSum}`, `$${partValue}`, `$${shareA + partValue}`, `$${Math.max(0, shareA - partValue)}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `Ali and Ben share <b>$${totalSum}</b> in the ratio <b>${p}:${q}</b>. How much does Ali get?`, hint: `Total parts = ${p}+${q}. Find 1 part, then multiply.`, options: built.options, correctIndex: built.correctIndex };
     }
 
-    function q_differenceRatio_normal() {
-      // A:B:C with difference between two people
-      const a = randInt(2, 5);
-      const b = randInt(4, 7);
-      const c = randInt(6, 10);
-      const diffParts = Math.abs(c - a);
-      const partValue = randInt(5, 20);
+    function genDifferenceRatio(mode) {
+      const a = randInt(2, 6);
+      const b = randInt(4, 9);
+      const c = randInt(6, 12);
+
+      const diffParts = c - a;
+      const partValue = (mode === "hard") ? randInt(8, 20) : randInt(5, 15);
       const diff = diffParts * partValue;
-      const total = (a + b + c) * partValue;
+      const totalAmt = (a + b + c) * partValue;
 
-      return {
-        type: "Ratio (Difference)",
-        prompt: `A, B and C share some money in the ratio ${a}:${b}:${c}. If C has $${diff} more than A, find the total amount of money.`,
-        inputMode: "text",
-        answerFormat: "number",
-        answer: total,
-        solution: `Difference in parts = ${c}-${a} = ${diffParts}. 1 part = ${diff} ÷ ${diffParts} = ${partValue}. Total parts = ${a}+${b}+${c} = ${a + b + c}. Total = ${a + b + c}×${partValue} = $${total}.`,
-      };
+      const correct = `$${totalAmt}`;
+      const wrongSeeds = uniqueStrings([
+        `$${diff}`, `$${(a + b + c) * (partValue + 1)}`, `$${(a + b + c) * Math.max(1, partValue - 1)}`,
+        `$${totalAmt + partValue * 2}`, `$${Math.max(0, totalAmt - partValue * 2)}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `A, B and C share some money in the ratio <b>${a}:${b}:${c}</b>.\nIf C has <b>$${diff}</b> more than A, find the total amount of money.`, hint: `Difference in parts = ${c}-${a}. Find 1 part, then total parts.`, options: built.options, correctIndex: built.correctIndex };
     }
 
-    function q_linkedRatios_hard_likePDF1() {
-      // Inspired by PDF Q1 but randomised and simpler numbers
-      // Red:Blue = r:b, Blue:Yellow = b:y. Add K blue, new Red:Blue = Rn:Bn.
-      // We'll generate from a consistent underlying triple.
-      const redUnits = randInt(2, 9);
-      const blueUnits1 = randInt(3, 10);
-      const blueUnits2 = randInt(5, 12);
-      const yellowUnits = randInt(1, 6);
-
-      // LCM for blue units
-      const lcm = (x, y) => (x * y) / gcd(x, y);
-      const commonBlue = lcm(blueUnits1, blueUnits2);
-
-      const mult1 = commonBlue / blueUnits1;
-      const mult2 = commonBlue / blueUnits2;
-
-      // Base units in common scale
-      const R = redUnits * mult1;
-      const B = commonBlue;
-      const Y = yellowUnits * mult2;
-
-      // Convert to actual balls per unit
-      const unitBall = randInt(2, 6) * 2; // even counts
-      let redBalls = R * unitBall;
-      let blueBalls = B * unitBall;
-      let yellowBalls = Y * unitBall;
-
-      // Now choose an "add blue" amount that makes new ratio nice
-      // Pick target ratio Rn:Bn close to original
-      const targetRn = randInt(5, 12);
-      const targetBn = randInt(10, 24);
-
-      // Make target match redBalls
-      const k = redBalls / targetRn;
-      if (!Number.isInteger(k)) {
-        // fallback: force a clean ratio using redBalls itself
-        const g = gcd(redBalls, blueBalls);
-        const rr = redBalls / g;
-        const bb = blueBalls / g;
-        const add = randInt(1, 6) * unitBall;
-        const newBlue = blueBalls + add;
-        // compute equivalent ratio simplified
-        const gg = gcd(redBalls, newBlue);
-        const rr2 = redBalls / gg;
-        const bb2 = newBlue / gg;
-        return {
-          type: "Linked Ratios (Change)",
-          prompt:
-            `A box contains red, blue and yellow balls.\n` +
-            `The ratio of red to blue is ${redUnits}:${blueUnits1} and the ratio of blue to yellow is ${blueUnits2}:${yellowUnits}.\n` +
-            `If ${add} blue balls are added, the ratio of red to blue becomes ${rr2}:${bb2}.\n` +
-            `Find the number of yellow balls.`,
-          inputMode: "text",
-          answerFormat: "number",
-          answer: yellowBalls,
-          solution:
-            `Link the two ratios using a common “blue”.\n` +
-            `Red:Blue = ${R}:${B} and Blue:Yellow = ${B}:${Y} (after scaling).\n` +
-            `So Red:Blue:Yellow = ${R}:${B}:${Y}.\n` +
-            `Given each unit represents ${unitBall} balls → Yellow = ${Y}×${unitBall} = ${yellowBalls}.`,
-        };
-      }
-
-      // If k is integer, compute needed newBlue = targetBn*k
-      const newBlue = targetBn * k;
-      const addBlue = newBlue - blueBalls;
-
-      // Ensure addBlue positive and reasonable; otherwise fallback
-      if (!(addBlue > 0 && addBlue <= 80 && Number.isInteger(addBlue))) {
-        return q_linkedRatios_hard_likePDF1(); // regenerate (bounded by randomness)
-      }
-
-      return {
-        type: "Linked Ratios (Change)",
-        prompt:
-          `A box contains red, blue and yellow balls.\n` +
-          `The ratio of red to blue is ${redUnits}:${blueUnits1} and the ratio of blue to yellow is ${blueUnits2}:${yellowUnits}.\n` +
-          `If ${addBlue} blue balls are added, the ratio of red to blue becomes ${targetRn}:${targetBn}.\n` +
-          `Find the number of yellow balls.`,
-        inputMode: "text",
-        answerFormat: "number",
-        answer: yellowBalls,
-        solution:
-          `Link ratios using a common blue.\n` +
-          `Scale so “blue” matches: Red:Blue:Yellow = ${R}:${B}:${Y}.\n` +
-          `Each unit = ${unitBall} balls → Yellow = ${Y}×${unitBall} = ${yellowBalls}.`,
-      };
-    }
-
-    function q_speedConvert() {
-      const kmh = randInt(18, 90); // typical
-      // convert km/h to m/s: (kmh * 1000) / 3600 = kmh * 5/18
+    function genSpeedConvert(mode) {
+      const kmh = (mode === "hard") ? [36, 54, 72, 90, 108][randInt(0, 4)] : [36, 54, 72, 90][randInt(0, 3)];
       const ms = (kmh * 5) / 18;
-      // choose nice kmh multiple of 18 for clean integer ms sometimes
-      const kmh2 = [36, 54, 72, 90][randInt(0, 3)];
-      const ms2 = (kmh2 * 5) / 18; // integer
-      return {
-        type: "Speed Conversion",
-        prompt: `Convert ${kmh2} km/h into m/s.`,
-        inputMode: "text",
-        answerFormat: "number",
-        answer: ms2,
-        solution: `${kmh2} km/h = ${kmh2}×1000 ÷ 3600 = ${kmh2}×(5/18) = ${ms2} m/s.`,
-      };
+      const correct = `${ms} m/s`;
+
+      const wrongSeeds = uniqueStrings([
+        `${kmh} m/s`, `${(ms + 1)} m/s`, `${Math.max(0, ms - 1)} m/s`,
+        `${(kmh / 18).toFixed(1)} m/s`, `${(kmh * 18 / 5).toFixed(0)} m/s`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `Convert <b>${kmh} km/h</b> into <b>m/s</b>.`, hint: `km/h → m/s: multiply by 5/18.`, options: built.options, correctIndex: built.correctIndex };
     }
 
-    function q_timeTaken_normal() {
-      const speed = [36, 54, 72][randInt(0, 2)];
-      const dist = randInt(12, 60);
-      // time hours = dist / speed
-      const timeH = dist / speed;
-      const timeS = Math.round(timeH * 3600);
-      const mins = Math.floor(timeS / 60);
-      const secs = timeS % 60;
+    function genUnitRate(mode) {
+      const cost = (mode === "hard") ? randInt(6, 18) : randInt(4, 14);
+      const grams = (mode === "hard") ? [250, 300, 400, 500, 750][randInt(0, 4)] : [200, 250, 400, 500][randInt(0, 3)];
+      const per100 = Math.round((cost / grams) * 100 * 100) / 100;
 
-      return {
-        type: "Time Taken",
-        prompt: `A vehicle travels ${dist} km at ${speed} km/h. Find the time taken in minutes and seconds.`,
-        inputMode: "text",
-        answerFormat: "text",
-        answer: `${mins}m ${secs}s`,
-        solution: `Time = distance ÷ speed = ${dist}/${speed} h = ${(timeH).toFixed(4)} h.\nConvert to seconds: ${(timeH).toFixed(4)}×3600 ≈ ${timeS}s = ${mins}m ${secs}s.`,
-      };
+      const correct = `$${per100} per 100g`;
+      const wrongSeeds = uniqueStrings([
+        `$${(cost / grams).toFixed(2)} per 100g`,
+        `$${(per100 + 0.5).toFixed(2)} per 100g`,
+        `$${Math.max(0, per100 - 0.5).toFixed(2)} per 100g`,
+        `$${(per100 * 10).toFixed(2)} per 100g`,
+        `$${(per100 / 10).toFixed(2)} per 100g`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `A packet costs <b>$${cost}</b> for <b>${grams}g</b>. What is the cost <b>per 100g</b>?`, hint: `Unit rate = cost ÷ grams × 100.`, options: built.options, correctIndex: built.correctIndex };
     }
 
-    function q_averageSpeed_normal_likePDF2c() {
-      // two legs, total distance / total time
-      const d1 = randInt(20, 60);
+    function genAvgSpeed(mode) {
+      const d1 = (mode === "hard") ? randInt(30, 70) : randInt(20, 60);
       const s1 = [36, 54, 72][randInt(0, 2)];
       const t1 = (d1 / s1) * 3600;
 
-      const d2 = randInt(15, 50);
-      const mins2 = randInt(20, 50);
+      const d2 = (mode === "hard") ? randInt(25, 60) : randInt(15, 50);
+      const mins2 = (mode === "hard") ? randInt(25, 55) : randInt(20, 50);
       const secs2 = [0, 20, 40][randInt(0, 2)];
       const t2 = mins2 * 60 + secs2;
 
       const totalD = d1 + d2;
       const totalT = t1 + t2;
       const avg = totalD / (totalT / 3600);
-      const avg3sf = Number(avg.toPrecision(3));
+      const ans = Number(avg.toPrecision(3));
 
-      return {
-        type: "Average Speed",
-        prompt:
-          `A lorry travels ${d1} km at ${s1} km/h.\n` +
-          `Then it travels ${d2} km in ${mins2} minutes ${secs2} seconds.\n` +
-          `Find the average speed for the whole journey (3 s.f.).`,
-        inputMode: "text",
-        answerFormat: "number",
-        answer: avg3sf,
-        solution:
-          `Total distance = ${d1}+${d2} = ${totalD} km.\n` +
-          `Time 1 = ${d1}/${s1} h = ${(t1/60).toFixed(2)} min.\n` +
-          `Time 2 = ${mins2}m ${secs2}s.\n` +
-          `Average speed = total distance ÷ total time.\n` +
-          `= ${totalD} ÷ (${(totalT/3600).toFixed(4)} h) ≈ ${avg.toFixed(4)} km/h → ${avg3sf} km/h (3 s.f.).`,
-      };
+      const correct = `${ans} km/h`;
+      const wrongSeeds = uniqueStrings([
+        `${Number((avg + 2).toPrecision(3))} km/h`,
+        `${Number((Math.max(0, avg - 2)).toPrecision(3))} km/h`,
+        `${Number((avg).toFixed(1))} km/h`,
+        `${Number((avg).toFixed(0))} km/h`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `A lorry travels <b>${d1} km</b> at <b>${s1} km/h</b>, then travels <b>${d2} km</b> in <b>${mins2} min ${secs2} s</b>.\nFind the average speed (3 s.f.).`, hint: `Average speed = total distance ÷ total time.`, options: built.options, correctIndex: built.correctIndex };
     }
 
-    function q_exchangeDecision_choice_likePDF3() {
-      // Decision question (Choice A/B)
-      // Singapore: 1 SGD = r HKD
-      // HK: 1 HKD = s SGD
-      // amount SGD = A
-      const r = (randInt(540, 620) / 100).toFixed(3); // ~5.40–6.20
-      const s = (randInt(160, 190) / 1000).toFixed(3); // ~0.160–0.190
-      const amt = randInt(200, 800);
+    function genBestExchange(mode) {
+      const r = (randInt(540, 620) / 100).toFixed(3);
+      const s = (randInt(160, 190) / 1000).toFixed(3);
+      const amt = (mode === "hard") ? randInt(300, 700) : randInt(200, 600);
 
       const hkInSG = amt * Number(r);
       const hkInHK = amt / Number(s);
-      const better = hkInSG > hkInHK ? "A" : "B"; // A = change in Singapore
-      const diff = Math.abs(hkInSG - hkInHK);
 
-      return {
-        type: "Best Exchange",
-        prompt:
-          `Exchange decision:\n` +
-          `In Singapore: 1 SGD = ${r} HKD.\n` +
-          `In Hong Kong: 1 HKD = ${s} SGD.\n` +
-          `Melisa has SGD ${amt}. Where should she change to get MORE HKD?\n` +
-          `A) Change in Singapore\n` +
-          `B) Change in Hong Kong`,
-        inputMode: "choice",
-        choices: {
-          A: `Change in Singapore`,
-          B: `Change in Hong Kong`,
-        },
-        correctChoice: better,
-        answerFormat: "choice",
-        answer: better,
-        solution:
-          `If change in Singapore: ${amt}×${r} = ${hkInSG.toFixed(2)} HKD.\n` +
-          `If change in Hong Kong: ${amt} ÷ ${s} = ${hkInHK.toFixed(2)} HKD.\n` +
-          `Difference ≈ ${diff.toFixed(2)} HKD → choose option ${better}.`,
+      const correct = (hkInSG >= hkInHK) ? "Change in Singapore" : "Change in Hong Kong";
+      const wrongSeeds = uniqueStrings([
+        correct === "Change in Singapore" ? "Change in Hong Kong" : "Change in Singapore",
+        "Both are the same",
+        "Cannot be determined",
+        "Change half-half",
+        "Change in Singapore (estimate)",
+        "Change in Hong Kong (estimate)",
+      ], correct);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `Exchange decision:\nIn Singapore: <b>1 SGD = ${r} HKD</b>\nIn Hong Kong: <b>1 HKD = ${s} SGD</b>\nMelisa has <b>SGD ${amt}</b>. Where should she change to get MORE HKD?`, hint: `Compute both: SGD×rate vs SGD÷rate.`, options: built.options, correctIndex: built.correctIndex };
+    }
+
+    function genLinkedRatio(mode) {
+      const r = randInt(2, 5);
+      const b1 = randInt(3, 7);
+      const b2 = randInt(5, 9);
+      const y = randInt(1, 4);
+
+      const lcm = (x, z) => (x * z) / gcd(x, z);
+      const commonB = lcm(b1, b2);
+      const mult1 = commonB / b1;
+      const mult2 = commonB / b2;
+
+      const R = r * mult1;
+      const B = commonB;
+      const Y = y * mult2;
+
+      const unit = (mode === "hard") ? randInt(2, 6) * 2 : randInt(2, 5) * 2;
+      const redBalls = R * unit;
+      const blueBalls = B * unit;
+      const yellowBalls = Y * unit;
+
+      const addBlue = unit * randInt(3, 10);
+      const newBlue = blueBalls + addBlue;
+
+      const g = gcd(redBalls, newBlue);
+      const rr = redBalls / g;
+      const bb = newBlue / g;
+
+      const correct = `${yellowBalls}`;
+      const wrongSeeds = uniqueStrings([
+        `${Y * unit + unit}`, `${Math.max(0, Y * unit - unit)}`, `${blueBalls}`, `${redBalls}`, `${Y * unit * 2}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `A box contains red, blue and yellow balls.\nThe ratio of red to blue is <b>${r}:${b1}</b> and the ratio of blue to yellow is <b>${b2}:${y}</b>.\nIf <b>${addBlue}</b> blue balls are added, the ratio of red to blue becomes <b>${rr}:${bb}</b>.\nFind the number of yellow balls.`, hint: `Link the ratios by making the “blue” the same, then convert using units.`, options: built.options, correctIndex: built.correctIndex };
+    }
+
+    /* =========================
+       QUESTION GENERATORS (G1)
+       - No speed / no average speed
+       - Unit-conversion ratio questions
+       - Mixed number / fraction / decimal ratios
+       ========================= */
+
+    // ✅ G1 Unit-conversion ratio (renamed from genG1UnitConversion → genG1)
+    function genG1(mode) {
+      const types = ["length", "mass", "volume", "time"];
+      const type = types[randInt(0, types.length - 1)];
+
+      // base: cm, g, mL, s
+      const toBase = {
+        length: (v, u) => (u === "m" ? v * 100 : v),
+        mass: (v, u) => (u === "kg" ? v * 1000 : v),
+        volume: (v, u) => (u === "L" ? v * 1000 : v),
+        time: (v, u) => (u === "min" ? v * 60 : (u === "h" ? v * 3600 : v)),
       };
-    }
 
-    function q_algebraSpeed_hard_likePDF5() {
-      // Similar structure to PDF Q5 but randomised
-      // half hour at x, then 20 min at 1.2x
-      // total time = 50 min = 5/6 hr
-      // distance = x*(1/2) + 1.2x*(1/3) = 0.5x + 0.4x = 0.9x
-      // average speed given => total distance / total time = avg => 0.9x / (5/6) = avg
-      const avg = [60, 72, 80, 90][randInt(0, 3)];
-      const x = (avg * 5) / 5.4; // from (0.9x)/(5/6) = avg => 0.9x *6/5 = avg => 5.4x/5 = avg => x = 5avg/5.4
-      const xRounded = Number(x.toFixed(1));
+      function build(leftVal, leftUnit, rightVal, rightUnit, convFn) {
+        const L = convFn(leftVal, leftUnit);
+        const R = convFn(rightVal, rightUnit);
 
-      return {
-        type: "Algebra Speed (Boss)",
-        prompt:
-          `Harry drives for 30 minutes at an average speed of x km/h, then for 20 minutes at an average speed of 1.2x km/h.\n` +
-          `Given the average speed for the entire journey is ${avg} km/h, find x (to 1 d.p.).`,
-        inputMode: "text",
-        answerFormat: "number",
-        answer: xRounded,
-        solution:
-          `Distance 1 = x×0.5 = 0.5x.\n` +
-          `Distance 2 = 1.2x×(20/60) = 1.2x×(1/3) = 0.4x.\n` +
-          `Total distance = 0.9x.\n` +
-          `Total time = 50 min = 5/6 h.\n` +
-          `Average speed = total distance ÷ total time:\n` +
-          `${avg} = 0.9x ÷ (5/6) = 0.9x×(6/5) = 1.08x.\n` +
-          `So x = ${avg} ÷ 1.08 = ${xRounded}.`,
-      };
-    }
+        // force integers (handle any decimals just in case)
+        const scale = (x) => {
+          const s = String(x);
+          if (!s.includes(".")) return { n: Math.round(x), m: 1 };
+          const dp = s.split(".")[1].length;
+          const m = Math.pow(10, dp);
+          return { n: Math.round(Number(x) * m), m };
+        };
+        const a = scale(L);
+        const b = scale(R);
+        const lInt = a.n * b.m;
+        const rInt = b.n * a.m;
 
-    function buildQuestion(modeKey) {
-      // Pools by mode
-      const easyPool = [q_ratioSimplify, q_shareTotal_easy, q_speedConvert];
-      const normalPool = [q_ratioSimplify, q_shareTotal_easy, q_differenceRatio_normal, q_timeTaken_normal, q_averageSpeed_normal_likePDF2c];
-      const hardPool = [q_linkedRatios_hard_likePDF1, q_differenceRatio_normal, q_averageSpeed_normal_likePDF2c, q_exchangeDecision_choice_likePDF3, q_algebraSpeed_hard_likePDF5];
+        const [sa, sb] = simplifyRatio(lInt, rInt);
+        const correct = `${sa}:${sb}`;
 
-      const pool =
-        modeKey === "easy" ? easyPool :
-        modeKey === "normal" ? normalPool :
-        hardPool;
+        const wrongSeeds = uniqueStrings([
+          `${sb}:${sa}`,
+          `${lInt}:${rInt}`,           // not simplified
+          `${sa}:${sb + 1}`,
+          `${Math.max(1, sa - 1)}:${sb}`,
+          `${sa + 1}:${sb}`,
+          `${sa}:${Math.max(1, sb - 1)}`,
+          `${sa * 2}:${sb}`,
+          `${sa}:${sb * 2}`,
+        ], correct).slice(0, 12);
 
-      const fn = pool[randInt(0, pool.length - 1)];
-      return fn();
-    }
-
-    // ----------------------------
-    // Render Question
-    // ----------------------------
-    function renderQuestion(q) {
-      currentQ = q;
-      setText(`${GAME_ID}-type-pill`, `Type: ${q.type}`);
-      setText(`${GAME_ID}-question`, q.prompt);
-
-      // Reset feedback/solution
-      setFeedback(true, "");
-      hideSolution();
-
-      if (q.inputMode === "choice") {
-        setInputMode("choice");
-        $(`${GAME_ID}-choiceA`).textContent = `A) ${q.choices.A}`;
-        $(`${GAME_ID}-choiceB`).textContent = `B) ${q.choices.B}`;
-      } else {
-        setInputMode("text");
-        const input = $(`${GAME_ID}-input`);
-        input.value = "";
-        input.focus();
+        const built = make8OptionsFromCorrect(correct, wrongSeeds);
+        return {
+          q: `What is the ratio of <b>${leftVal}${leftUnit}</b> : <b>${rightVal}${rightUnit}</b> in simplest form?`,
+          hint: `Convert both to the same unit first, then simplify.`,
+          options: built.options,
+          correctIndex: built.correctIndex,
+        };
       }
 
-      // Restart timer
-      startTimer(MODE_CONFIG[mode].timeLimit);
+      if (type === "volume") {
+        const leftIsmL = randInt(0, 1) === 0;
+        const leftVal = leftIsmL ? randInt(150, 950) : randInt(1, (mode === "hard") ? 25 : 15);
+        const leftUnit = leftIsmL ? "mL" : "L";
+
+        const rightUnit = leftIsmL ? "L" : "mL";
+        const rightVal = (rightUnit === "L") ? randInt(2, (mode === "hard") ? 30 : 20) : randInt(200, 9000);
+
+        return build(leftVal, leftUnit, rightVal, rightUnit, (v, u) => toBase.volume(v, u));
+      }
+
+      if (type === "length") {
+        const leftIscm = randInt(0, 1) === 0;
+        const leftVal = leftIscm ? randInt(15, 480) : randInt(1, (mode === "hard") ? 45 : 30);
+        const leftUnit = leftIscm ? "cm" : "m";
+
+        const rightUnit = leftIscm ? "m" : "cm";
+        const rightVal = (rightUnit === "m") ? randInt(2, (mode === "hard") ? 60 : 40) : randInt(40, 9800);
+
+        return build(leftVal, leftUnit, rightVal, rightUnit, (v, u) => toBase.length(v, u));
+      }
+
+      if (type === "mass") {
+        const leftIsg = randInt(0, 1) === 0;
+        const leftVal = leftIsg ? randInt(50, 950) : randInt(1, (mode === "hard") ? 35 : 20);
+        const leftUnit = leftIsg ? "g" : "kg";
+
+        const rightUnit = leftIsg ? "kg" : "g";
+        const rightVal = (rightUnit === "kg") ? randInt(2, (mode === "hard") ? 45 : 30) : randInt(200, 20000);
+
+        return build(leftVal, leftUnit, rightVal, rightUnit, (v, u) => toBase.mass(v, u));
+      }
+
+      // time
+      const hard = mode === "hard";
+      const units = hard ? ["s", "min", "h"] : ["s", "min"];
+      const leftUnit = units[randInt(0, units.length - 1)];
+      const rightUnit = units[randInt(0, units.length - 1)];
+
+      const leftVal =
+        leftUnit === "s" ? randInt(30, 420) :
+        leftUnit === "min" ? randInt(2, 90) :
+        randInt(1, 8);
+
+      const rightVal =
+        rightUnit === "s" ? randInt(60, 900) :
+        rightUnit === "min" ? randInt(3, 120) :
+        randInt(1, 10);
+
+      return build(leftVal, leftUnit, rightVal, rightUnit, (v, u) => toBase.time(v, u));
     }
 
-    // ----------------------------
-    // Checking answers
-    // ----------------------------
-    function checkAnswer(userRaw) {
-      if (!currentQ) return;
+    // ✅ NEW: G1 mixed numbers / fractions / decimals ratio (no unit conversion)
+    function genG1MixedFracRatio(mode) {
+      const itemsA = ["onion", "carrot", "rice", "flour", "sugar", "oil", "potato"];
+      const itemsB = ["potato", "tomato", "water", "milk", "butter", "salt", "beans"];
+      const aName = itemsA[randInt(0, itemsA.length - 1)];
+      const bName = itemsB[randInt(0, itemsB.length - 1)];
 
-      total++;
-      let correct = false;
+      // Build A and B as rationals
+      // A: fraction OR mixed number
+      const aType = randInt(0, 1); // 0 fraction, 1 mixed
+      let A, Astr;
 
-      if (currentQ.answerFormat === "number") {
-        // Accept: exact, or small rounding differences if user typed decimals
-        const userNum = Number(String(userRaw).replace(/[^\d.\-]/g, ""));
-        const ans = Number(currentQ.answer);
-        if (Number.isFinite(userNum)) {
-          // Allow tolerance for 3sf/1dp style (0.05)
-          correct = Math.abs(userNum - ans) <= 0.05;
+      if (aType === 0) {
+        const n = randInt(1, 3);
+        const d = randInt(n + 1, 8);
+        A = ratFromFrac(n, d);
+        Astr = `${n}/${d}`;
+      } else {
+        const w = randInt(1, (mode === "hard") ? 4 : 3);
+        const n = randInt(1, 3);
+        const d = randInt(n + 1, 8);
+        A = ratFromMixed(w, n, d);
+        Astr = `${w} ${n}/${d}`;
+      }
+
+      // B: decimal OR mixed number OR fraction
+      const bType = randInt(0, 2); // 0 decimal, 1 mixed, 2 fraction
+      let B, Bstr;
+
+      if (bType === 0) {
+        const base = (mode === "hard") ? [0.5, 1.5, 2.5, 3.5, 4.5] : [0.5, 1.5, 2.5, 3.5];
+        const dec = base[randInt(0, base.length - 1)];
+        B = ratFromDecimal(dec);
+        Bstr = `${dec}`;
+      } else if (bType === 1) {
+        const w = randInt(1, (mode === "hard") ? 5 : 4);
+        const n = randInt(1, 3);
+        const d = randInt(n + 1, 8);
+        B = ratFromMixed(w, n, d);
+        Bstr = `${w} ${n}/${d}`;
+      } else {
+        const n = randInt(1, 5);
+        const d = randInt(n + 1, 10);
+        B = ratFromFrac(n, d);
+        Bstr = `${n}/${d}`;
+      }
+
+      // Ratio A:B -> (A.n/A.d):(B.n/B.d) => A.n*B.d : B.n*A.d
+      const left = A.n * B.d;
+      const right = B.n * A.d;
+      const [sa, sb] = simplifyRatio(left, right);
+      const correct = `${sa}:${sb}`;
+
+      const wrongSeeds = uniqueStrings([
+        `${sb}:${sa}`,
+        `${left}:${right}`,                // not simplified
+        `${sa}:${sb + 1}`,
+        `${Math.max(1, sa - 1)}:${sb}`,
+        `${sa + 1}:${sb}`,
+        `${sa}:${Math.max(1, sb - 1)}`,
+        `${sa * 2}:${sb}`,
+        `${sa}:${sb * 2}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return {
+        q: `A recipe uses <b>${Astr}</b> ${aName} for every <b>${Bstr}</b> ${bName}.\nWhat is the ratio <b>${aName} : ${bName}</b> in simplest form?`,
+        hint: `Turn each number into a fraction, then clear denominators to get integers.`,
+        options: built.options,
+        correctIndex: built.correctIndex,
+      };
+    }
+
+    function genG1FractionRatio(mode) {
+      const p = randInt(1, 5);
+      const q = randInt(2, 7);
+      const n = p;
+      const d = p + q;
+      const correct = `${n}/${d}`;
+
+      const wrongSeeds = uniqueStrings([
+        `${q}/${d}`, `${n}/${q}`, `${n}/${d + 1}`,
+        `${Math.max(1, n - 1)}/${d}`, `${n + 1}/${d}`, `${d}/${n}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return {
+        q: `The ratio of A to B is <b>${p}:${q}</b>. What fraction of the total is <b>A</b>?`,
+        hint: `A fraction = A parts ÷ total parts.`,
+        options: built.options,
+        correctIndex: built.correctIndex,
+      };
+    }
+
+    function genG1FractionOfQuantityInRatio(mode) {
+      const p = randInt(2, 6);
+      const q = randInt(3, 8);
+      const parts = p + q;
+
+      const unit = (mode === "hard") ? randInt(4, 20) : randInt(3, 15);
+      const totalVal = parts * unit;
+      const aAmt = p * unit;
+
+      const correct = `${aAmt}`;
+      const wrongSeeds = uniqueStrings([
+        `${q * unit}`, `${totalVal}`, `${unit}`, `${aAmt + unit}`, `${Math.max(0, aAmt - unit)}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return {
+        q: `A and B share <b>${totalVal}</b> items in the ratio <b>${p}:${q}</b>.\nHow many items does <b>A</b> get?`,
+        hint: `Find 1 part = total ÷ (${p}+${q}).`,
+        options: built.options,
+        correctIndex: built.correctIndex,
+      };
+    }
+
+    function genG1UnitRateWithConversion(mode) {
+      const type = randInt(0, 1) === 0 ? "mass" : "volume";
+      let q = "", correct = "", wrongSeeds = [];
+
+      if (type === "mass") {
+        const cost = (mode === "hard") ? randInt(8, 28) : randInt(5, 18);
+        const grams = (mode === "hard") ? [250, 300, 400, 500, 750][randInt(0, 4)] : [200, 250, 400, 500][randInt(0, 3)];
+        const perKg = Math.round((cost / grams) * 1000 * 100) / 100;
+
+        correct = `$${perKg} per 1 kg`;
+        q = `A packet costs <b>$${cost}</b> for <b>${grams} g</b>. What is the cost <b>per 1 kg</b>?`;
+        wrongSeeds = [
+          `$${(cost / grams).toFixed(2)} per 1 kg`,
+          `$${(perKg * 10).toFixed(2)} per 1 kg`,
+          `$${(perKg / 10).toFixed(2)} per 1 kg`,
+          `$${(perKg + 1).toFixed(2)} per 1 kg`,
+          `$${Math.max(0, perKg - 1).toFixed(2)} per 1 kg`,
+        ];
+      } else {
+        const cost = (mode === "hard") ? randInt(6, 22) : randInt(4, 16);
+        const mL = (mode === "hard") ? [250, 300, 400, 500, 750, 800][randInt(0, 5)] : [200, 250, 400, 500][randInt(0, 3)];
+        const perL = Math.round((cost / mL) * 1000 * 100) / 100;
+
+        correct = `$${perL} per 1 L`;
+        q = `A drink costs <b>$${cost}</b> for <b>${mL} mL</b>. What is the cost <b>per 1 L</b>?`;
+        wrongSeeds = [
+          `$${(cost / mL).toFixed(2)} per 1 L`,
+          `$${(perL * 10).toFixed(2)} per 1 L`,
+          `$${(perL / 10).toFixed(2)} per 1 L`,
+          `$${(perL + 1).toFixed(2)} per 1 L`,
+          `$${Math.max(0, perL - 1).toFixed(2)} per 1 L`,
+        ];
+      }
+
+      const built = make8OptionsFromCorrect(correct, uniqueStrings(wrongSeeds, correct).slice(0, 12));
+      return { q, hint: `Convert to the target unit first, then scale the cost.`, options: built.options, correctIndex: built.correctIndex };
+    }
+
+    function genG1RatioWithFractionGiven(mode) {
+      const bn = randInt(1, 4);
+      const bd = randInt(bn + 1, 7);
+      const [sa, sb] = simplifyRatio(bn, bd);
+      const correct = `${sa}:${sb}`;
+
+      const wrongSeeds = uniqueStrings([
+        `${sb}:${sa}`, `${bn}:${bd}`, `${sa}:${sb + 1}`,
+        `${Math.max(1, sa - 1)}:${sb}`, `${sa + 1}:${sb}`,
+        `${sa}:${Math.max(1, sb - 1)}`,
+      ], correct).slice(0, 12);
+
+      const built = make8OptionsFromCorrect(correct, wrongSeeds);
+      return { q: `A is <b>${bn}/${bd}</b> of B. Find the ratio <b>A : B</b> in simplest form.`, hint: `Turn “A is a fraction of B” into a ratio, then simplify.`, options: built.options, correctIndex: built.correctIndex };
+    }
+
+    function pickQuestion() {
+      const mode = modeSel.value;
+
+      // ---------- TIMED MODES: ALWAYS MIXED ----------
+      if (!isWarmup()) {
+        // ✅ G1 pool (no speed)
+        if (isG1()) {
+          const gensG1 = [
+            genG1,                 // unit-conversion ratios
+            genG1MixedFracRatio,   // mixed numbers/fractions/decimals ratios
+            genG1FractionRatio,
+            genG1FractionOfQuantityInRatio,
+            genG1UnitRateWithConversion,
+            genG1RatioWithFractionGiven,
+            // keep some core ratio skills
+            genRatioBasics,
+            genShareRatio,
+            genDifferenceRatio,
+            genLinkedRatio,
+            genUnitRate,
+          ];
+          const fn = gensG1[randInt(0, gensG1.length - 1)];
+          return fn(mode);
         }
-      } else if (currentQ.answerFormat === "ratio") {
-        // Accept "a:b" or "a : b"
-        const u = normaliseAnswer(userRaw).replace(/\s/g, "");
-        const a = normaliseAnswer(currentQ.answer).replace(/\s/g, "");
-        correct = u === a;
-      } else if (currentQ.answerFormat === "choice") {
-        correct = String(userRaw).toUpperCase() === String(currentQ.answer).toUpperCase();
-      } else {
-        // text match normalised
-        correct = normaliseAnswer(userRaw) === normaliseAnswer(currentQ.answer);
+
+        // ✅ G3 pool (original)
+        const gensG3 = [
+          genRatioBasics,
+          genShareRatio,
+          genDifferenceRatio,
+          genSpeedConvert,
+          genUnitRate,
+          genAvgSpeed,
+          genBestExchange,
+          genLinkedRatio,
+        ];
+        const fn = gensG3[randInt(0, gensG3.length - 1)];
+        return fn(mode);
       }
 
-      if (correct) {
-        score++;
-        streak++;
-        setFeedback(true, `✅ Correct!`);
-      } else {
-        streak = 0;
-        setFeedback(false, `❌ Not quite.`);
-        showSolution(currentQ.solution + `\n\nAnswer: ${currentQ.answerFormat === "choice" ? currentQ.answer : String(currentQ.answer)}`);
-      }
+      // ---------- WARM-UP: USER-CONTROLLED TOPIC ----------
+      const topic = topicSel.value;
+      if (isG1() && (topic === "speed" || topic === "avgSpeed")) topicSel.value = "g1";
 
-      setText(`${GAME_ID}-score`, `Score: ${score} / ${total}`);
-      setText(`${GAME_ID}-streak`, `Streak: ${streak} 🔥`);
+      const mapG3 = {
+        mixed: [genRatioBasics, genShareRatio, genDifferenceRatio, genSpeedConvert, genUnitRate, genAvgSpeed, genBestExchange, genLinkedRatio],
+        ratioBasics: [genRatioBasics],
+        shareRatio: [genShareRatio, genDifferenceRatio],
+        linkedRatio: [genLinkedRatio],
+        speed: [genSpeedConvert],
+        avgSpeed: [genAvgSpeed],
+        unitRate: [genUnitRate],
+        exchange: [genBestExchange],
+        g1: [genG1, genG1MixedFracRatio, genG1FractionRatio, genG1FractionOfQuantityInRatio, genG1UnitRateWithConversion, genG1RatioWithFractionGiven],
+      };
 
-      stopTimer();
+      const mapG1 = {
+        mixed: [genG1, genG1MixedFracRatio, genG1FractionRatio, genG1FractionOfQuantityInRatio, genG1UnitRateWithConversion, genG1RatioWithFractionGiven, genRatioBasics, genShareRatio, genDifferenceRatio, genLinkedRatio, genUnitRate],
+        ratioBasics: [genRatioBasics],
+        shareRatio: [genShareRatio, genDifferenceRatio, genG1FractionOfQuantityInRatio],
+        linkedRatio: [genLinkedRatio],
+        unitRate: [genUnitRate, genG1UnitRateWithConversion],
+        exchange: [genBestExchange],
+        g1: [genG1, genG1MixedFracRatio, genG1FractionRatio, genG1FractionOfQuantityInRatio, genG1UnitRateWithConversion, genG1RatioWithFractionGiven],
+      };
 
-      // Auto-next after a short pause if correct; if wrong, require New Question.
-      if (correct) {
-        setTimeout(() => {
-          if (!mode) return;
-          renderQuestion(buildQuestion(mode));
-        }, 650);
-      }
+      const map = isG1() ? mapG1 : mapG3;
+      const pool = map[topic] || map.mixed;
+      const fn = pool[randInt(0, pool.length - 1)];
+      return fn(mode);
     }
 
-    function handleTimeout() {
-      total++;
+    /* =========================
+       END OF PART 2
+       (Paste PART 3 below)
+       ========================= */
+	  
+	  /* =========================
+   PART 3 / 3 ✅
+   Paste this directly BELOW Part 2
+   ========================= */
+
+    // ---------- GAME FLOW (SAME AS PERCENTAGE) ----------
+    function startQuiz() {
+      enforceTopicRules();
+
+      score = 0;
+      total = 0;
       streak = 0;
-      setText(`${GAME_ID}-score`, `Score: ${score} / ${total}`);
-      setText(`${GAME_ID}-streak`, `Streak: ${streak} 🔥`);
-      setFeedback(false, `⏰ Time’s up.`);
-      if (currentQ) {
-        showSolution(currentQ.solution + `\n\nAnswer: ${currentQ.answerFormat === "choice" ? currentQ.answer : String(currentQ.answer)}`);
-      }
+      qIndex = 0;
+      inProgress = true;
+      locked = false;
+      attemptedThisQ = false;
+
+      feedbackEl.textContent = "";
+      hintEl.textContent = "";
+      updateScore();
+
+      modeSel.disabled = true;
+      if (!isWarmup()) topicSel.disabled = true;
+      if (!isWarmup()) levelSel.disabled = true;
+
+      nextBtn.textContent = "Next Question ▶";
+      nextBtn.disabled = true;
+
+      nextQuestion();
     }
 
-    // ----------------------------
-    // Events
-    // ----------------------------
-    container.querySelectorAll(".rr-mode").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        mode = btn.dataset.mode;
-        setText(`${GAME_ID}-mode-pill`, `Mode: ${MODE_CONFIG[mode].label}`);
-        score = 0; total = 0; streak = 0;
-        setText(`${GAME_ID}-score`, `Score: 0 / 0`);
-        setText(`${GAME_ID}-streak`, `Streak: 0 🔥`);
-        setFeedback(true, "");
-        hideSolution();
-        renderQuestion(buildQuestion(mode));
-      });
-    });
-
-    $(`${GAME_ID}-new`).addEventListener("click", () => {
-      if (!mode) return;
-      renderQuestion(buildQuestion(mode));
-    });
-
-    $(`${GAME_ID}-reset`).addEventListener("click", () => {
-      mode = null;
-      score = 0; total = 0; streak = 0;
+    function endQuiz() {
       stopTimer();
-      setText(`${GAME_ID}-mode-pill`, `Mode: –`);
-      setText(`${GAME_ID}-type-pill`, `Type: –`);
-      setText(`${GAME_ID}-timer`, `⏱ –`);
-      setText(`${GAME_ID}-score`, `Score: 0 / 0`);
-      setText(`${GAME_ID}-streak`, `Streak: 0 🔥`);
-      setText(`${GAME_ID}-question`, `Choose a mode to start.`);
-      setFeedback(true, "");
-      hideSolution();
-      setInputMode("text");
-      $(`${GAME_ID}-input`).value = "";
+      inProgress = false;
+      locked = true;
+      attemptedThisQ = false;
+
+      modeSel.disabled = false;
+      enforceTopicRules();
+
+      metaEl.textContent = `Quiz finished (${TOTAL_QUESTIONS} questions)`;
+      questionEl.textContent = "—";
+      optionsEl.innerHTML = "";
+      timerEl.textContent = isWarmup() ? "☕ Warm-Up (No Timer)" : "⏱ –";
+      hintEl.textContent = "";
+
+      feedbackEl.textContent = isWarmup()
+        ? "✅ Warm-Up complete! (No score recorded.)"
+        : `✅ Quiz complete! Final score: ${score} / ${total}`;
+
+      nextBtn.textContent = "Restart Quiz ↻";
+      nextBtn.disabled = false;
+    }
+
+    function resetQuiz() {
+      stopTimer();
+      inProgress = false;
+      locked = false;
+      attemptedThisQ = false;
+
+      score = 0;
+      total = 0;
+      streak = 0;
+      qIndex = 0;
+
+      modeSel.disabled = false;
+      enforceTopicRules();
+
+      updateScore();
+      metaEl.textContent = "Ready";
+      questionEl.textContent = "—";
+      hintEl.textContent = "";
+      optionsEl.innerHTML = "";
+      timerEl.textContent = isWarmup() ? "☕ Warm-Up (No Timer)" : "⏱ –";
+      feedbackEl.textContent = "Choose mode (and topic/level in Warm-Up), then press Start Quiz.";
+      nextBtn.textContent = "Start Quiz ▶";
+      nextBtn.disabled = false;
+    }
+
+    function nextQuestion() {
+      if (!inProgress) return;
+      if (qIndex >= TOTAL_QUESTIONS) { endQuiz(); return; }
+
+      enforceTopicRules();
+
+      stopTimer();
+      locked = false;
+      attemptedThisQ = false;
+      nextBtn.disabled = true;
+
+      feedbackEl.textContent = "";
+      hintEl.textContent = "";
+      optionsEl.innerHTML = "";
+
+      qIndex++;
+      metaEl.textContent = `Question ${qIndex} of ${TOTAL_QUESTIONS}`;
+
+      current = pickQuestion();
+      questionEl.innerHTML = (current.q || "").replace(/\n/g, "<br>");
+
+      renderOptions(current.options, current.correctIndex);
+      startTimer();
+    }
+
+    function handlePick(card) {
+      if (locked || !inProgress) return;
+
+      const isCorrect = card.dataset.correct === "1";
+      attemptedThisQ = true;
+      nextBtn.disabled = false;
+
+      if (isWarmup()) {
+        locked = true;
+        if (isCorrect) {
+          feedbackEl.textContent = "✅ Correct!";
+          card.classList.add("correct");
+          launchConfetti(2);
+          playCorrectSound();
+        } else {
+          feedbackEl.textContent = "❌ Not quite. Try the next one!";
+          hintEl.textContent = "Hint: " + (current.hint || "");
+          card.classList.add("wrong");
+          playWrongSound();
+        }
+        return;
+      }
+
+      const withinTime = timeLeft > 0;
+
+      locked = true;
+      stopTimer();
+      total++;
+
+      if (withinTime) {
+        if (isCorrect) {
+          score += 1;
+          streak++;
+          feedbackEl.textContent = "✅ Correct!";
+          card.classList.add("correct");
+          launchConfetti(3);
+          playCorrectSound();
+        } else {
+          streak = 0;
+          feedbackEl.textContent = "❌ Wrong. Keep going!";
+          hintEl.textContent = "Hint: " + (current.hint || "");
+          card.classList.add("wrong");
+          playWrongSound();
+        }
+      } else {
+        if (isCorrect) {
+          score += 0.5;
+          streak = 0;
+          feedbackEl.textContent = "🟡 Correct (after time) → +0.5 pts.";
+          card.classList.add("correct");
+          launchConfetti(1);
+          playCorrectSound();
+        } else {
+          streak = 0;
+          feedbackEl.textContent = "❌ Wrong (0 pts).";
+          hintEl.textContent = "Hint: " + (current.hint || "");
+          card.classList.add("wrong");
+          playWrongSound();
+        }
+      }
+
+      updateScore();
+    }
+
+    // ---------- EVENTS ----------
+    nextBtn.addEventListener("click", () => {
+      if (!inProgress) { startQuiz(); return; }
+      if (!attemptedThisQ) {
+        feedbackEl.textContent = "⚠️ No skipping: please attempt this question first.";
+        return;
+      }
+      nextQuestion();
     });
 
-    $(`${GAME_ID}-submit`).addEventListener("click", () => {
-      if (!currentQ || currentQ.inputMode !== "text") return;
-      checkAnswer($(`${GAME_ID}-input`).value);
-    });
+    resetBtn.addEventListener("click", resetQuiz);
 
-    $(`${GAME_ID}-input`).addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && currentQ && currentQ.inputMode === "text") {
-        checkAnswer($(`${GAME_ID}-input`).value);
+    modeSel.addEventListener("change", () => {
+      enforceTopicRules();
+      if (!inProgress) {
+        timerEl.textContent = isWarmup() ? "☕ Warm-Up (No Timer)" : "⏱ –";
       }
     });
 
-    container.querySelectorAll(".rr-choice").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (!currentQ || currentQ.inputMode !== "choice") return;
-        const choice = btn.dataset.choice;
-        checkAnswer(choice);
-      });
+    topicSel.addEventListener("change", () => {
+      enforceTopicRules();
     });
+
+    levelSel.addEventListener("change", () => {
+      enforceTopicRules();
+      if (!inProgress) {
+        feedbackEl.textContent = "Level updated. Choose topic (Warm-Up) and press Start Quiz.";
+      }
+    });
+
+    // ---------- INIT ----------
+    enforceTopicRules();
+    resetQuiz();
   }
 
-  // Auto-init
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initRatioRateGame);
   } else {
